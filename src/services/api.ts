@@ -1,15 +1,35 @@
 import axios from 'axios';
 import type { AxiosInstance, AxiosRequestConfig } from 'axios';
-import { getCurrentTenant, getTenantApiUrl } from '../utils/tenant';
+import { getCurrentTenant, getTenantApiUrl, getTenantApiId } from '../utils/tenant';
+
+// Registration interface
+export interface RegisterData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+}
+
+export interface RegisterResponse {
+  message: string;
+  user?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+}
 
 class ApiService {
   private axiosInstance: AxiosInstance;
   private currentTenant: string;
+  private authToken: string | null = null;
+  private tenantId: string | null = null;
 
   constructor() {
     this.currentTenant = getCurrentTenant();
     this.axiosInstance = axios.create({
-      baseURL: getTenantApiUrl(this.currentTenant),
+      baseURL: 'http://localhost:3000', // Use your backend URL directly
       timeout: 10000,
       headers: {
         'Content-Type': 'application/json',
@@ -19,17 +39,71 @@ class ApiService {
     this.setupInterceptors();
   }
 
+  // Set authentication data (token and tenant ID)
+  public setAuthData(token: string, tenantId: string) {
+    this.authToken = token;
+    this.tenantId = tenantId;
+    console.log('API Service - Auth data set:', { token: token.substring(0, 20) + '...', tenantId });
+  }
+
+  // Clear authentication data
+  public clearAuthData() {
+    this.authToken = null;
+    this.tenantId = null;
+    console.log('API Service - Auth data cleared');
+  }
+
+  // Get current auth data
+  public getAuthData() {
+    return {
+      token: this.authToken,
+      tenantId: this.tenantId
+    };
+  }
+
   private setupInterceptors() {
     // Request interceptor to add auth token and tenant info
     this.axiosInstance.interceptors.request.use(
       (config) => {
-        const token = localStorage.getItem('authToken');
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
+        // Add bearer token if available
+        if (this.authToken) {
+          config.headers.Authorization = `Bearer ${this.authToken}`;
+        } else {
+          // Fallback to localStorage if not set in service
+          const token = localStorage.getItem('authToken');
+          if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+          }
         }
         
-        // Add tenant header
-        config.headers['X-Tenant-ID'] = this.currentTenant;
+        // Add tenant header with proper mapping (only if not already set)
+        if (!config.headers['x-tenant-id']) {
+          // Priority order: stored tenantId > localStorage > current tenant
+          let tenantIdToUse = null;
+          
+          if (this.tenantId) {
+            tenantIdToUse = this.tenantId;
+          } else {
+            const savedTenantId = localStorage.getItem('tenantId');
+            if (savedTenantId) {
+              tenantIdToUse = savedTenantId;
+            } else {
+              tenantIdToUse = getTenantApiId(this.currentTenant);
+            }
+          }
+          
+          config.headers['x-tenant-id'] = tenantIdToUse;
+        }
+        
+        // Log headers being sent (remove in production)
+        console.log('API Request Headers:', {
+          'Authorization': config.headers.Authorization ? 'Bearer ***' : 'Not set',
+          'x-tenant-id': config.headers['x-tenant-id'],
+          'Content-Type': config.headers['Content-Type']
+        });
+        console.log('Request URL:', config.url);
+        console.log('Request Method:', config.method?.toUpperCase());
+        console.log('Request Data:', config.data);
         
         return config;
       },
@@ -44,7 +118,9 @@ class ApiService {
       (error) => {
         if (error.response?.status === 401) {
           // Handle unauthorized - clear auth and redirect to login
+          this.clearAuthData();
           localStorage.removeItem('authToken');
+          localStorage.removeItem('tenantId');
           localStorage.removeItem('user');
           window.location.href = '/login';
         }
@@ -56,7 +132,50 @@ class ApiService {
   // Update tenant and reconfigure base URL
   public updateTenant(tenant: string) {
     this.currentTenant = tenant;
-    this.axiosInstance.defaults.baseURL = getTenantApiUrl(tenant);
+    // Update the tenant header for future requests
+  }
+
+  // Temporarily set tenant for a single request
+  public async registerWithTenant(data: RegisterData, tenant: string): Promise<RegisterResponse> {
+    const backendTenantId = getTenantApiId(tenant);
+    
+    // Debug logging
+    console.log(`Registration API Request - Frontend Tenant: ${tenant}, Backend Tenant ID: ${backendTenantId}`);
+    
+    const response = await this.axiosInstance.post<RegisterResponse>('/auth/register', data, {
+      headers: {
+        'x-tenant-id': backendTenantId,
+        'Content-Type': 'application/json'
+      }
+    });
+    return response.data;
+  }
+
+  // Login with explicit tenant selection
+  public async loginWithTenant(email: string, password: string, tenant: string): Promise<any> {
+    const backendTenantId = getTenantApiId(tenant);
+    
+    // Debug logging
+    console.log(`Login API Request - Frontend Tenant: ${tenant}, Backend Tenant ID: ${backendTenantId}`);
+    
+    const response = await this.axiosInstance.post('/auth/login', { email, password }, {
+      headers: {
+        'x-tenant-id': backendTenantId,
+        'Content-Type': 'application/json'
+      }
+    });
+    return response.data;
+  }
+
+  // Authentication methods
+  public async register(data: RegisterData): Promise<RegisterResponse> {
+    const response = await this.axiosInstance.post<RegisterResponse>('/auth/register', data);
+    return response.data;
+  }
+
+  public async login(email: string, password: string): Promise<any> {
+    const response = await this.axiosInstance.post('/auth/login', { email, password });
+    return response.data;
   }
 
   // Generic API methods

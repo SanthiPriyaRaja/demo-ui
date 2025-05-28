@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../features/auth/AuthContext';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
-import { getCurrentTenant } from '../utils/tenant';
+import { getCurrentTenant, getTenantApiId } from '../utils/tenant';
 
 interface FormData {
   email: string;
@@ -22,12 +22,14 @@ export const Login: React.FC = () => {
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [registrationMessage, setRegistrationMessage] = useState<string>('');
   
   const { login, isAuthenticated, error: authError } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   
   const currentTenant = getCurrentTenant();
+  const backendTenantId = getTenantApiId(currentTenant);
   const from = location.state?.from?.pathname || '/dashboard';
 
   useEffect(() => {
@@ -35,6 +37,21 @@ export const Login: React.FC = () => {
       navigate(from, { replace: true });
     }
   }, [isAuthenticated, navigate, from]);
+
+  useEffect(() => {
+    // Check for registration success message
+    if (location.state?.message) {
+      setRegistrationMessage(location.state.message);
+      // Pre-fill email if provided
+      if (location.state?.email) {
+        setFormData(prev => ({ ...prev, email: location.state.email }));
+      }
+      // Clear the message after 5 seconds
+      setTimeout(() => {
+        setRegistrationMessage('');
+      }, 5000);
+    }
+  }, [location.state]);
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -47,8 +64,8 @@ export const Login: React.FC = () => {
 
     if (!formData.password) {
       newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+    } else if (formData.password.length < 5) {
+      newErrors.password = 'Password must be at least 5 characters';
     }
 
     setErrors(newErrors);
@@ -81,10 +98,18 @@ export const Login: React.FC = () => {
     setIsSubmitting(true);
     
     try {
-      await login(formData.email, formData.password);
+      // Debug logging
+      console.log('Login attempt with:');
+      console.log('- Frontend Tenant:', currentTenant);
+      console.log('- Backend Tenant ID:', backendTenantId);
+      console.log('- Email:', formData.email);
+      
+      // Use the current tenant from URL for login
+      await login(formData.email, formData.password, currentTenant);
       // Navigation will happen automatically via useEffect when isAuthenticated changes
     } catch (err) {
       // Error is handled by AuthContext
+      console.error('Login error:', err);
     } finally {
       setIsSubmitting(false);
     }
@@ -112,15 +137,26 @@ export const Login: React.FC = () => {
 
           {/* Form Section */}
           <div className="px-8 py-8">
-            {/* Tenant Badge */}
-            <div className="mb-6 text-center">
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
-                <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm2 6a2 2 0 114 0 2 2 0 01-4 0zm8 0a2 2 0 114 0 2 2 0 01-4 0z" clipRule="evenodd" />
-                </svg>
-                Tenant: {currentTenant}
-              </span>
-            </div>
+            {/* Registration Success Message */}
+            {registrationMessage && (
+              <div className="mb-6 rounded-xl bg-green-50 border border-green-200 p-4">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-green-800">
+                      Registration Successful!
+                    </h3>
+                    <div className="mt-1 text-sm text-green-700">
+                      {registrationMessage}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div className="space-y-5">
@@ -171,7 +207,7 @@ export const Login: React.FC = () => {
                 </div>
               )}
 
-              <div className="pt-2">
+              <div className="pt-2 space-y-3">
                 <Button
                   type="submit"
                   className="w-full h-12 text-base font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transform transition-all duration-200 hover:scale-[1.02] shadow-lg hover:shadow-xl"
@@ -180,19 +216,25 @@ export const Login: React.FC = () => {
                 >
                   {isSubmitting ? 'Signing in...' : 'Sign in'}
                 </Button>
+
+                <div className="text-center">
+                  <span className="text-sm text-gray-500">or</span>
+                </div>
+
+                <Link to="/register">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="w-full h-12 text-base font-semibold transform transition-all duration-200 hover:scale-[1.02]"
+                  >
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                    </svg>
+                    Create New Account
+                  </Button>
+                </Link>
               </div>
             </form>
-          </div>
-
-          {/* Footer Section */}
-          <div className="px-8 py-6 bg-gray-50 border-t border-gray-100">
-            <div className="text-center">
-              <p className="text-xs text-gray-500 mb-2">Demo Credentials</p>
-              <div className="bg-white rounded-lg p-3 border border-gray-200">
-                <p className="text-sm font-mono text-gray-700">admin@example.com</p>
-                <p className="text-sm font-mono text-gray-700">password</p>
-              </div>
-            </div>
           </div>
         </div>
 

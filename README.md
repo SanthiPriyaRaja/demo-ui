@@ -92,16 +92,51 @@ The application supports multi-tenancy in two ways:
 ### Available Tenants
 
 - `default` - Default Tenant
+- `tenant1` - Tenant 1 (maps to `technxt` in API)
+- `tenant2` - Tenant 2 (maps to `iorta` in API)
 - `demo` - Demo Tenant  
 - `test` - Test Tenant
+- `technxt` - TechNXT (direct mapping)
+- `iorta` - Iorta (direct mapping)
+
+### Tenant Mapping
+
+The application includes a tenant mapping system that converts frontend tenant names to backend tenant IDs:
+
+| Frontend Tenant | Backend API Tenant ID |
+|----------------|----------------------|
+| `tenant1`      | `technxt`           |
+| `tenant2`      | `iorta`             |
+| `default`      | `default`           |
+| `demo`         | `demo`              |
+| `test`         | `test`              |
+| `technxt`      | `technxt`           |
+| `iorta`        | `iorta`             |
+
+This mapping is handled automatically in the API service via the `getTenantApiId()` function in `src/utils/tenant.ts`.
 
 ### Testing Multi-tenancy
 
-1. Visit `http://localhost:5173/?tenant=demo`
-2. Login with the demo credentials
-3. Notice the tenant information in the dashboard
-4. Use the "Switch Tenant" buttons to change tenants
-5. Try different URLs: `http://localhost:5173/?tenant=test`
+1. Visit `http://localhost:5175/register` (note: port may vary)
+2. **Test Tenant Dropdown:**
+   - Select "Tenant 1 (TechNXT)" from the dropdown
+   - Notice the badge shows "tenant1 → technxt"
+   - Fill out the registration form and submit
+   - Check browser console: `API Request - Frontend Tenant: tenant1, Backend Tenant ID: technxt`
+   - Verify in Network tab: `x-tenant-id: technxt` header is sent
+
+3. **Test Different Tenants:**
+   - Try selecting "Tenant 2 (Iorta)" → should send `x-tenant-id: iorta`
+   - Try "Demo Tenant" → should send `x-tenant-id: demo`
+
+4. **URL-based Testing:**
+   - Visit `http://localhost:5175/?tenant=tenant1`
+   - Notice the dropdown pre-selects "Tenant 1 (TechNXT)"
+   - Login with demo credentials or try registration
+
+5. **Dashboard Testing:**
+   - Use the "Switch Tenant" buttons to change tenants
+   - Verify the tenant mapping in the browser's Network tab
 
 ## Key Components
 
@@ -204,3 +239,22 @@ const login = async (email: string, password: string) => {
 ## License
 
 This project is licensed under the MIT License.
+
+### Registration with Tenant Selection
+
+The registration page now includes a tenant dropdown that allows users to:
+
+1. **Select their tenant** from a dropdown menu
+2. **See real-time mapping** - the UI shows both frontend tenant name and backend API ID
+3. **Submit registration** with the correct tenant header
+
+**Available Tenant Options:**
+- Tenant 1 (TechNXT) → `x-tenant-id: technxt`
+- Tenant 2 (Iorta) → `x-tenant-id: iorta`  
+- Demo Tenant → `x-tenant-id: demo`
+- Test Tenant → `x-tenant-id: test`
+- Default Tenant → `x-tenant-id: default`
+
+The selected tenant is automatically passed in the `x-tenant-id` header when making the registration API call.
+
+### Testing Multi-tenancy

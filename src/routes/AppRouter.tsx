@@ -4,6 +4,7 @@ import { AuthProvider } from '../features/auth/AuthContext';
 import { TenantProvider } from '../features/tenant/TenantContext';
 import { ProtectedRoute } from './ProtectedRoute';
 import { Login } from '../pages/Login';
+import { Register } from '../pages/Register';
 import { Dashboard } from '../pages/Dashboard';
 import { Leads } from '../pages/Leads';
 
@@ -15,6 +16,7 @@ export const AppRouter: React.FC = () => {
           <Routes>
             {/* Public routes */}
             <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
             
             {/* Protected routes */}
             <Route 

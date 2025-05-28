@@ -25,10 +25,12 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // Mock available tenants - in a real app, this would come from an API
   const [availableTenants] = useState<Tenant[]>([
     { id: 'default', name: 'Default Tenant', subdomain: 'default' },
+    { id: 'tenant1', name: 'Tenant 1 (TechNXT)', subdomain: 'tenant1' },
+    { id: 'tenant2', name: 'Tenant 2 (Iorta)', subdomain: 'tenant2' },
     { id: 'demo', name: 'Demo Tenant', subdomain: 'demo' },
     { id: 'test', name: 'Test Tenant', subdomain: 'test' },
-    { id: 'tenant1', name: 'Tenant 1', subdomain: 'tenant1' },
-    { id: 'tenant2', name: 'Tenant 2', subdomain: 'tenant2' },
+    { id: 'technxt', name: 'TechNXT', subdomain: 'technxt' },
+    { id: 'iorta', name: 'Iorta', subdomain: 'iorta' },
   ]);
 
   useEffect(() => {

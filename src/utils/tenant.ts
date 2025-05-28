@@ -4,6 +4,21 @@ export interface Tenant {
   subdomain: string;
 }
 
+// Mapping from frontend tenant names to backend tenant IDs
+export const getTenantApiId = (frontendTenant: string): string => {
+  const tenantMapping: Record<string, string> = {
+    'tenant1': 'technxt',
+    'tenant2': 'iorta',
+    'default': 'default',
+    'demo': 'demo',
+    'test': 'test',
+    'technxt': 'technxt',
+    'iorta': 'iorta',
+  };
+  
+  return tenantMapping[frontendTenant] || frontendTenant;
+};
+
 export const getTenantFromSubdomain = (): string | null => {
   const hostname = window.location.hostname;
   const parts = hostname.split('.');
@@ -34,13 +49,13 @@ export const getCurrentTenant = (): string => {
     return queryTenant;
   }
   
-  // Default tenant
-  return 'default';
+  // Default to tenant1 (which maps to technxt)
+  return 'tenant1';
 };
 
 export const getTenantApiUrl = (tenant: string): string => {
   // In a real app, this would map to different API endpoints per tenant
-  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://api.example.com';
+  const baseUrl = process.env.VITE_API_BASE_URL || 'https://api.example.com';
   return `${baseUrl}/${tenant}`;
 };
 

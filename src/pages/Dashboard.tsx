@@ -6,7 +6,7 @@ import { leadService } from '../services/leadService';
 import type { Lead } from '../types/Lead';
 
 export const Dashboard: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, token, tenantId } = useAuth();
   const { currentTenant, switchTenant, availableTenants } = useTenant();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [leadCounts, setLeadCounts] = useState({
@@ -122,89 +122,56 @@ export const Dashboard: React.FC = () => {
                     </dd>
                   </div>
                   <div className="flex justify-between">
-                    <dt className="text-sm font-medium text-gray-500">User's Tenant</dt>
-                    <dd className="text-sm font-semibold text-gray-900">{user?.tenant}</dd>
+                    <dt className="text-sm font-medium text-gray-500">Backend Tenant ID</dt>
+                    <dd className="text-sm font-semibold text-gray-900">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                        {tenantId || user?.tenantId}
+                      </span>
+                    </dd>
                   </div>
                   <div className="flex justify-between">
-                    <dt className="text-sm font-medium text-gray-500">URL</dt>
-                    <dd className="text-xs font-mono text-gray-900 break-all">{window.location.href}</dd>
+                    <dt className="text-sm font-medium text-gray-500">User's Tenant</dt>
+                    <dd className="text-sm font-semibold text-gray-900">{user?.tenant}</dd>
                   </div>
                 </dl>
               </div>
             </div>
 
-            {/* Quick Actions Card */}
+            {/* Authentication Info Card */}
             <div className="bg-white/80 backdrop-blur-sm overflow-hidden shadow-xl rounded-2xl border border-gray-100 hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02]">
               <div className="px-6 py-6">
                 <div className="flex items-center mb-4">
                   <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-teal-500 rounded-xl flex items-center justify-center">
                     <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                     </svg>
                   </div>
                   <h3 className="ml-3 text-lg font-semibold text-gray-900">
-                    Quick Actions
+                    Authentication
                   </h3>
                 </div>
-                <div className="space-y-3">
-                  <Button 
-                    className="w-full" 
-                    variant="primary"
-                    onClick={() => alert('Feature coming soon!')}
-                  >
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                    View Profile
-                  </Button>
-                  <Button 
-                    className="w-full" 
-                    variant="secondary"
-                    onClick={() => alert('Feature coming soon!')}
-                  >
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    Settings
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Tenant Switcher Section */}
-          <div className="mt-8">
-            <div className="bg-white/80 backdrop-blur-sm shadow-xl rounded-2xl border border-gray-100">
-              <div className="px-6 py-6">
-                <div className="flex items-center mb-6">
-                  <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl flex items-center justify-center">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                    </svg>
+                <dl className="space-y-4">
+                  <div className="flex justify-between">
+                    <dt className="text-sm font-medium text-gray-500">Status</dt>
+                    <dd className="text-sm font-semibold text-gray-900">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Authenticated
+                      </span>
+                    </dd>
                   </div>
-                  <h3 className="ml-3 text-lg font-semibold text-gray-900">
-                    Switch Tenant
-                  </h3>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                  {availableTenants.map((tenant) => (
-                    <Button
-                      key={tenant.id}
-                      variant={tenant.id === currentTenant ? 'primary' : 'secondary'}
-                      onClick={() => switchTenant(tenant.id)}
-                      disabled={tenant.id === currentTenant}
-                      className="w-full"
-                    >
-                      {tenant.name}
-                      {tenant.id === currentTenant && (
-                        <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </Button>
-                  ))}
-                </div>
+                  <div className="flex justify-between">
+                    <dt className="text-sm font-medium text-gray-500">Bearer Token</dt>
+                    <dd className="text-xs font-mono text-gray-900 break-all">
+                      {token ? `${token.substring(0, 20)}...` : 'Not available'}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-sm font-medium text-gray-500">Stored Tenant ID</dt>
+                    <dd className="text-sm font-mono text-gray-900">
+                      {tenantId || 'Not available'}
+                    </dd>
+                  </div>
+                </dl>
               </div>
             </div>
           </div>
