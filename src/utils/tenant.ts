@@ -11,11 +11,7 @@ export const getTenantApiId = (frontendTenant: string): string => {
   const tenantMapping: Record<string, string> = {
     'tenant1': 'technxt',
     'tenant2': 'iorta',
-    'default': 'default',
-    'demo': 'demo',
-    'test': 'test',
-    'technxt': 'technxt',
-    'iorta': 'iorta',
+    
   };
   
   return tenantMapping[frontendTenant] || frontendTenant;
@@ -56,7 +52,7 @@ export const getCurrentTenant = (): string => {
 };
 
 export const getTenantApiUrl = (tenant: string): string => {
-  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+  const baseUrl = process.env.VITE_API_BASE_URL || 'http://localhost:3000';
   return baseUrl;
 };
 

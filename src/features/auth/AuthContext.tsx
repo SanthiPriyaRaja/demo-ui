@@ -23,6 +23,42 @@ export interface AuthContextType {
   error: string | null;
 }
 
+// Mock user database for demonstration
+const mockUsers = [
+  {
+    id: '1',
+    email: 'admin@technxt.com',
+    password: 'password',
+    firstName: 'Admin',
+    lastName: 'TechNXT',
+    tenant: 'tenant1', // Maps to 'technxt'
+  },
+  {
+    id: '2',
+    email: 'user@iorta.com',
+    password: 'password',
+    firstName: 'User',
+    lastName: 'Iorta',
+    tenant: 'tenant2', // Maps to 'iorta'
+  },
+  {
+    id: '3',
+    email: 'demo@demo.com',
+    password: 'password',
+    firstName: 'Demo',
+    lastName: 'User',
+    tenant: 'demo',
+  },
+  {
+    id: '4',
+    email: 'sai@gmail.com',
+    password: '12345',
+    firstName: 'Sai',
+    lastName: 'Kumar',
+    tenant: 'tenant1', // Maps to 'technxt'
+  },
+];
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = () => {
@@ -79,16 +115,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Use tenant-specific login
           response = await apiService.loginWithTenant(email, password, tenant);
         } else {
-          // Use default login
-          response = await apiService.login(email, password);
+          // Use default login with current tenant from URL
+          const currentTenant = getCurrentTenant();
+          response = await apiService.loginWithTenant(email, password, currentTenant);
         }
         
         // Handle API response - check for both 'token' and 'access_token'
         const authToken = response.access_token || response.token;
         
         if (authToken && response.user) {
-          const currentTenant = tenant || getCurrentTenant();
-          const backendTenantId = getTenantApiId(currentTenant);
+          // IMPORTANT: Use tenant information from API response if available
+          // This allows different users to belong to different tenants
+          let userTenant: string;
+          let userTenantId: string;
+          
+          if (response.user.tenant || response.tenant) {
+            // If API returns tenant info, use that
+            const apiTenant = response.user.tenant || response.tenant;
+            userTenant = apiTenant;
+            userTenantId = getTenantApiId(apiTenant);
+          } else {
+            // Fallback to URL-based tenant if API doesn't return tenant info
+            const currentTenant = tenant || getCurrentTenant();
+            userTenant = currentTenant;
+            userTenantId = getTenantApiId(currentTenant);
+          }
           
           const apiUser: User = {
             id: response.user.id || response.user._id || '1',
@@ -98,26 +149,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               : response.user.email,
             firstName: response.user.firstName,
             lastName: response.user.lastName,
-            tenant: currentTenant,
-            tenantId: backendTenantId,
+            tenant: userTenant,
+            tenantId: userTenantId,
           };
           
           // Save to localStorage
           localStorage.setItem('authToken', authToken);
-          localStorage.setItem('tenantId', backendTenantId);
+          localStorage.setItem('tenantId', userTenantId);
           localStorage.setItem('user', JSON.stringify(apiUser));
           
           // Update state
           setUser(apiUser);
           setToken(authToken);
-          setTenantId(backendTenantId);
+          setTenantId(userTenantId);
           
           // Update API service with auth data
-          apiService.setAuthData(authToken, backendTenantId);
+          apiService.setAuthData(authToken, userTenantId);
           
           console.log('Login successful - Stored data:');
           console.log('Token:', authToken);
-          console.log('Tenant ID:', backendTenantId);
+          console.log('User Tenant:', userTenant);
+          console.log('User Tenant ID:', userTenantId);
           console.log('User:', apiUser);
           console.log('Full API Response:', response);
           
@@ -129,36 +181,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('API login failed, trying fallback:', apiError.message);
         
         // If API fails, fall back to mock authentication for demo purposes
-        if (email === 'admin@example.com' && password === 'password') {
-          const currentTenant = tenant || getCurrentTenant();
-          const backendTenantId = getTenantApiId(currentTenant);
+        const mockUser = mockUsers.find(user => 
+          user.email === email && user.password === password
+        );
+        
+        if (mockUser) {
+          const userTenant = mockUser.tenant;
+          const userTenantId = getTenantApiId(userTenant);
           const mockToken = 'mock-jwt-token-' + Date.now();
           
-          const mockUser: User = {
-            id: '1',
-            email,
-            name: 'Admin User',
-            tenant: currentTenant,
-            tenantId: backendTenantId,
+          const authenticatedUser: User = {
+            id: mockUser.id,
+            email: mockUser.email,
+            name: `${mockUser.firstName} ${mockUser.lastName}`,
+            firstName: mockUser.firstName,
+            lastName: mockUser.lastName,
+            tenant: userTenant,
+            tenantId: userTenantId,
           };
           
           // Save to localStorage
           localStorage.setItem('authToken', mockToken);
-          localStorage.setItem('tenantId', backendTenantId);
-          localStorage.setItem('user', JSON.stringify(mockUser));
+          localStorage.setItem('tenantId', userTenantId);
+          localStorage.setItem('user', JSON.stringify(authenticatedUser));
           
           // Update state
-          setUser(mockUser);
+          setUser(authenticatedUser);
           setToken(mockToken);
-          setTenantId(backendTenantId);
+          setTenantId(userTenantId);
           
           // Update API service with auth data
-          apiService.setAuthData(mockToken, backendTenantId);
+          apiService.setAuthData(mockToken, userTenantId);
           
           console.log('Mock login successful - Stored data:');
           console.log('Token:', mockToken);
-          console.log('Tenant ID:', backendTenantId);
-          console.log('User:', mockUser);
+          console.log('User Tenant:', userTenant);
+          console.log('User Tenant ID:', userTenantId);
+          console.log('User:', authenticatedUser);
           
           return;
         }

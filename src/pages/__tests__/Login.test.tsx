@@ -120,12 +120,18 @@ describe('Login Component', () => {
       );
 
       const submitButton = screen.getByRole('button', { name: /sign in/i });
+      
+      // Submit the form without filling any fields
       await user.click(submitButton);
 
+      // Wait for validation errors to appear
       await waitFor(() => {
         expect(screen.getByText('Email is required')).toBeInTheDocument();
+      }, { timeout: 3000 });
+      
+      await waitFor(() => {
         expect(screen.getByText('Password is required')).toBeInTheDocument();
-      });
+      }, { timeout: 3000 });
     });
 
     test('shows validation error for invalid email format', async () => {
@@ -139,12 +145,14 @@ describe('Login Component', () => {
       const emailInput = screen.getByLabelText(/email address/i);
       const submitButton = screen.getByRole('button', { name: /sign in/i });
 
+      // Enter invalid email and submit
       await user.type(emailInput, 'invalid-email');
       await user.click(submitButton);
 
+      // Wait for validation error to appear
       await waitFor(() => {
         expect(screen.getByText('Email is invalid')).toBeInTheDocument();
-      });
+      }, { timeout: 3000 });
     });
 
     test('shows validation error for short password', async () => {
@@ -158,12 +166,14 @@ describe('Login Component', () => {
       const passwordInput = screen.getByLabelText(/password/i);
       const submitButton = screen.getByRole('button', { name: /sign in/i });
 
+      // Enter short password and submit
       await user.type(passwordInput, '123');
       await user.click(submitButton);
 
+      // Wait for validation error to appear
       await waitFor(() => {
         expect(screen.getByText('Password must be at least 5 characters')).toBeInTheDocument();
-      });
+      }, { timeout: 3000 });
     });
 
     test('clears validation errors when user starts typing', async () => {
@@ -177,17 +187,21 @@ describe('Login Component', () => {
       const emailInput = screen.getByLabelText(/email address/i);
       const submitButton = screen.getByRole('button', { name: /sign in/i });
 
-      // Trigger validation error
+      // First trigger validation error by submitting empty form
       await user.click(submitButton);
+      
+      // Wait for error to appear
       await waitFor(() => {
         expect(screen.getByText('Email is required')).toBeInTheDocument();
-      });
+      }, { timeout: 3000 });
 
       // Start typing to clear error
       await user.type(emailInput, 'test@example.com');
+      
+      // Wait for error to disappear
       await waitFor(() => {
         expect(screen.queryByText('Email is required')).not.toBeInTheDocument();
-      });
+      }, { timeout: 3000 });
     });
   });
 
@@ -361,12 +375,15 @@ describe('Login Component', () => {
       );
 
       const submitButton = screen.getByRole('button', { name: /sign in/i });
+      
+      // Submit empty form to trigger validation
       await user.click(submitButton);
 
+      // Wait for error message to appear and check accessibility
       await waitFor(() => {
         const errorMessage = screen.getByText('Email is required');
         expect(errorMessage).toHaveAttribute('role', 'alert');
-      });
+      }, { timeout: 3000 });
     });
   });
 
