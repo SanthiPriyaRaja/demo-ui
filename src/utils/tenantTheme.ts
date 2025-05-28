@@ -3,6 +3,7 @@ interface TenantColors {
   gradientTo: string;
   buttonPrimary: string;
   buttonHover: string;
+  focusBorder: string;
 }
 
 export const getTenantColors = (tenantId: string): TenantColors => {
@@ -13,6 +14,7 @@ export const getTenantColors = (tenantId: string): TenantColors => {
         gradientTo: 'to-indigo-600',
         buttonPrimary: 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white',
         buttonHover: 'hover:from-blue-700 hover:to-indigo-700',
+        focusBorder: 'focus:border-blue-500',
       };
     case 'tenant2':
       return {
@@ -20,6 +22,7 @@ export const getTenantColors = (tenantId: string): TenantColors => {
         gradientTo: 'to-teal-600',
         buttonPrimary: 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white',
         buttonHover: 'hover:from-emerald-700 hover:to-teal-700',
+        focusBorder: 'focus:border-emerald-500',
       };
     case 'tenant3':
       return {
@@ -27,6 +30,7 @@ export const getTenantColors = (tenantId: string): TenantColors => {
         gradientTo: 'to-pink-600',
         buttonPrimary: 'bg-gradient-to-r from-purple-600 to-pink-600 text-white',
         buttonHover: 'hover:from-purple-700 hover:to-pink-700',
+        focusBorder: 'focus:border-purple-500',
       };
     default:
       return {
@@ -34,6 +38,7 @@ export const getTenantColors = (tenantId: string): TenantColors => {
         gradientTo: 'to-indigo-600',
         buttonPrimary: 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white',
         buttonHover: 'hover:from-blue-700 hover:to-indigo-700',
+        focusBorder: 'focus:border-blue-500',
       };
   }
 }; 

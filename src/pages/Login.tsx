@@ -33,14 +33,14 @@ export const Login: React.FC = () => {
   const [loginError, setLoginError] = useState<string | null>(null);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
 
+  const colors = getTenantColors(formData.selectedTenant);
+
   useEffect(() => {
     // Check if coming from registration
     if (location.state?.registrationSuccess) {
       setRegistrationSuccess(true);
     }
   }, [location.state]);
-
-  const colors = getTenantColors(formData.selectedTenant);
 
   const validateForm = () => {
     const newErrors: FormErrors = {};
