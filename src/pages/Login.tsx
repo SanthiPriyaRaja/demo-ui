@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../features/auth/AuthContext';
 import { useTenant } from '../features/tenant/TenantContext';
+import { getTenantColors } from '../utils/tenantTheme';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 
@@ -38,6 +39,8 @@ export const Login: React.FC = () => {
       setRegistrationSuccess(true);
     }
   }, [location.state]);
+
+  const colors = getTenantColors(formData.selectedTenant);
 
   const validateForm = () => {
     const newErrors: FormErrors = {};
@@ -94,7 +97,7 @@ export const Login: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4 sm:p-6 lg:p-8">
       <div className="w-full max-w-4xl flex overflow-hidden bg-white rounded-2xl shadow-xl">
         {/* Left Header Section */}
-        <div className="w-2/5 bg-gradient-to-br from-blue-600 to-indigo-600 p-8 flex flex-col items-center text-center relative overflow-hidden">
+        <div className={`w-2/5 bg-gradient-to-br ${colors.gradientFrom} ${colors.gradientTo} p-8 flex flex-col items-center text-center relative overflow-hidden`}>
           {/* Glossy overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-white/5 to-transparent pointer-events-none" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white/10 via-transparent to-transparent opacity-70 pointer-events-none" />
@@ -216,7 +219,7 @@ export const Login: React.FC = () => {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full h-12 text-base font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transform transition-all duration-200 hover:scale-[1.02] shadow-lg hover:shadow-xl text-white"
+                className={`w-full h-12 text-base font-semibold ${colors.buttonPrimary} ${colors.buttonHover} transform transition-all duration-200 hover:scale-[1.02] shadow-lg hover:shadow-xl`}
               >
                 {isLoading ? 'Signing in...' : 'Sign in'}
               </Button>

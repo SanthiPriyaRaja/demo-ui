@@ -7,6 +7,7 @@ import { getTenantApiId } from '../utils/tenant';
 import { useTenant } from '../features/tenant/TenantContext';
 import { apiService } from '../services/api';
 import type { RegisterData } from '../services/api';
+import { getTenantColors } from '../utils/tenantTheme';
 
 interface FormData extends RegisterData {
   confirmPassword: string;
@@ -45,6 +46,8 @@ export const Register: React.FC = () => {
   const selectedTenantInfo = availableTenants.find(t => t.id === formData.selectedTenant);
   const backendTenantId = selectedTenantInfo ? getTenantApiId(selectedTenantInfo.id) : getTenantApiId(formData.selectedTenant);
   const from = location.state?.from?.pathname || '/dashboard';
+
+  const colors = getTenantColors(formData.selectedTenant);
 
   // Update selected tenant when current tenant changes
   useEffect(() => {
@@ -199,7 +202,7 @@ export const Register: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4 sm:p-6 lg:p-8">
       <div className="w-full max-w-4xl flex overflow-hidden bg-white rounded-2xl shadow-xl">
         {/* Left Header Section */}
-        <div className="w-2/5 bg-gradient-to-br from-blue-600 to-indigo-600 p-8 flex flex-col items-center text-center relative overflow-hidden">
+        <div className={`w-2/5 bg-gradient-to-br ${colors.gradientFrom} ${colors.gradientTo} p-8 flex flex-col items-center text-center relative overflow-hidden`}>
           {/* Glossy overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-white/5 to-transparent pointer-events-none" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white/10 via-transparent to-transparent opacity-70 pointer-events-none" />
@@ -363,9 +366,8 @@ export const Register: React.FC = () => {
             <div className="pt-2">
               <Button
                 type="submit"
-                className="w-full h-12 text-base font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transform transition-all duration-200 hover:scale-[1.02] shadow-lg hover:shadow-xl text-white"
-                isLoading={isSubmitting}
-                disabled={isSubmitting || !!successMessage}
+                disabled={isSubmitting}
+                className={`w-full h-12 text-base font-semibold ${colors.buttonPrimary} ${colors.buttonHover} transform transition-all duration-200 hover:scale-[1.02] shadow-lg hover:shadow-xl`}
               >
                 {isSubmitting ? 'Creating Account...' : 'Create Account'}
               </Button>
