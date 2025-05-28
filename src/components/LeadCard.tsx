@@ -8,11 +8,13 @@ interface LeadCardProps {
 export const LeadCard: React.FC<LeadCardProps> = ({ lead }) => {
     const getStatusColor = (status: string) => {
         switch (status) {
-            case 'In Progress':
+            case 'Open':
                 return 'bg-blue-100 text-blue-800';
+            case 'Converted':
+                return 'bg-green-100 text-green-800';
             case 'Rejected':
                 return 'bg-red-100 text-red-800';
-            case 'Archived':
+            case 'Discarded':
                 return 'bg-gray-100 text-gray-800';
             default:
                 return 'bg-gray-100 text-gray-800';
@@ -70,10 +72,12 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead }) => {
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-gray-100">
-                    <p className="text-xs font-medium text-gray-500">Remarks</p>
+                    <p className="text-xs font-medium text-gray-500">Created</p>
+                    <p className="text-sm text-gray-900">{formatDate(lead.createdAt)}</p>
+                    <p className="text-xs font-medium text-gray-500 mt-2">Remarks</p>
                     <p className="text-sm text-gray-900 mt-1 line-clamp-2">{lead.userRemarks}</p>
                 </div>
             </div>
         </div>
     );
-}; 
+};

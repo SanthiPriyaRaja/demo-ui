@@ -13,6 +13,7 @@ class ApiService {
       timeout: 10000,
       headers: {
         'Content-Type': 'application/json',
+        'x-tenant-id': 'technxt'
       },
     });
 
@@ -29,7 +30,7 @@ class ApiService {
         }
         
         // Add tenant header
-        config.headers['X-Tenant-ID'] = this.currentTenant;
+        config.headers['x-tenant-id'] = 'technxt';
         
         return config;
       },
@@ -83,4 +84,4 @@ class ApiService {
 
 // Create and export a singleton instance
 export const apiService = new ApiService();
-export default apiService; 
+export default apiService;

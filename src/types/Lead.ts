@@ -1,4 +1,14 @@
+export type LeadProgress =
+  | 'New Lead Entry'
+  | 'Contacted'
+  | 'Qualified'
+  | 'Proposal Sent'
+  | 'Negotiation'
+  | 'Closed Won'
+  | 'Closed Lost';
+
 export interface Lead {
+    _id?: string;
     firstName: string;
     lastName: string;
     email: string;
@@ -7,11 +17,14 @@ export interface Lead {
     province: string;
     city: string;
     leadType: string;
-    leadStatus: 'In Progress' | 'Rejected' | 'Archived';
-    leadProgress: string;
+    leadStatus: 'Open' | 'Converted' | 'Rejected' | 'Discarded';
+    leadProgress: LeadProgress;
     allocatorRemarks: string;
     userRemarks: string;
     appointmentDate: string;
+    createdAt?: string;
+    updatedAt?: string;
+    __v?: number;
 }
 
-export type LeadTab = 'All' | 'In Progress' | 'Rejected' | 'Archived'; 
+export type LeadTab = 'All' | 'Open' | 'Converted' | 'Rejected' | 'Discarded';

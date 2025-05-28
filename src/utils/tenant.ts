@@ -1,3 +1,5 @@
+import axios from 'axios';
+
 export interface Tenant {
   id: string;
   name: string;
@@ -22,30 +24,17 @@ export const getTenantFromQuery = (): string | null => {
 };
 
 export const getCurrentTenant = (): string => {
-  // First try to get tenant from subdomain
-  const subdomainTenant = getTenantFromSubdomain();
-  if (subdomainTenant) {
-    return subdomainTenant;
-  }
-  
-  // Then try query parameter
-  const queryTenant = getTenantFromQuery();
-  if (queryTenant) {
-    return queryTenant;
-  }
-  
-  // Default tenant
-  return 'default';
+  // Always return the default tenant 'technxt'
+  return 'technxt';
 };
 
 export const getTenantApiUrl = (tenant: string): string => {
-  // In a real app, this would map to different API endpoints per tenant
-  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://api.example.com';
-  return `${baseUrl}/${tenant}`;
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+  return baseUrl;
 };
 
 export const setTenantInUrl = (tenant: string): void => {
   const url = new URL(window.location.href);
   url.searchParams.set('tenant', tenant);
   window.history.replaceState({}, '', url.toString());
-}; 
+};
