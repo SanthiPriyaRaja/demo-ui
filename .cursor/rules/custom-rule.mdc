@@ -3,3 +3,139 @@ description:
 globs:
 alwaysApply: false
 ---
+# UI Style Guidelines for Multi-Tenant Dashboard Application
+
+## Design System Overview
+Follow these styling principles based on the modern dashboard design reference:
+
+### Color Palette
+- **Primary Blue**: `#3B82F6` (blue-500) for primary actions and accents
+- **Secondary Blue**: `#1E40AF` (blue-800) for darker elements
+- **Light Blue**: `#DBEAFE` (blue-100) for backgrounds and subtle highlights
+- **Gray Scale**: 
+  - Text Primary: `#111827` (gray-900)
+  - Text Secondary: `#6B7280` (gray-500)
+  - Text Muted: `#9CA3AF` (gray-400)
+  - Borders: `#E5E7EB` (gray-200)
+  - Background: `#F9FAFB` (gray-50)
+- **Success**: `#10B981` (emerald-500)
+- **Warning**: `#F59E0B` (amber-500)
+- **Error**: `#EF4444` (red-500)
+
+### Typography
+- **Font Family**: Use system fonts with fallbacks: `font-sans`
+- **Headings**: 
+  - H1: `text-2xl font-bold` (24px, 700 weight)
+  - H2: `text-xl font-semibold` (20px, 600 weight)
+  - H3: `text-lg font-medium` (18px, 500 weight)
+- **Body Text**: `text-sm` (14px) for most content
+- **Small Text**: `text-xs` (12px) for labels and metadata
+- **Line Height**: Use `leading-relaxed` for better readability
+
+### Card Components
+```css
+/* Standard card styling */
+.card-base {
+  @apply bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200;
+}
+
+/* Card with subtle elevation */
+.card-elevated {
+  @apply bg-white rounded-xl shadow-[0_2px_4px_rgba(0,0,0,0.02),0_4px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_16px_rgba(0,0,0,0.08),0_16px_32px_rgba(0,0,0,0.06)] transition-all duration-300;
+}
+```
+
+### Layout & Spacing
+- **Container**: `max-w-7xl mx-auto px-4 sm:px-6 lg:px-8`
+- **Grid**: Use `grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6`
+- **Padding**: 
+  - Small: `p-4` (16px)
+  - Medium: `p-6` (24px)
+  - Large: `p-8` (32px)
+- **Margins**: Use consistent spacing scale: `space-y-4`, `space-y-6`, `space-y-8`
+
+### Button Styles
+- **Primary**: `bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white`
+- **Secondary**: `bg-white hover:bg-gray-50 text-gray-700 border-2 border-gray-200 hover:border-gray-300`
+- **Danger**: `bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white`
+- **Sizing**: `px-6 py-3 text-sm h-11` for medium, `px-4 py-2 text-sm h-9` for small
+- **Border Radius**: `rounded-xl` for modern look
+- **Transitions**: `transition-all duration-200 ease-in-out transform hover:scale-[1.02]`
+
+### Input Fields
+- **Base**: `border-2 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-0 focus:border-blue-500`
+- **Normal State**: `border-gray-200 bg-white hover:border-gray-300`
+- **Error State**: `border-red-300 text-red-900 focus:border-red-500 bg-red-50`
+- **Padding**: `px-4 py-3`
+- **Transitions**: `transition-all duration-200 ease-in-out`
+
+### Dashboard Specific Styles
+
+#### Stat Cards
+```css
+.stat-card {
+  @apply bg-white rounded-xl p-6 border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200;
+}
+
+.stat-value {
+  @apply text-2xl font-bold text-gray-900;
+}
+
+.stat-label {
+  @apply text-sm font-medium text-gray-500 uppercase tracking-wide;
+}
+
+.stat-change {
+  @apply text-xs font-medium;
+}
+
+.stat-change-positive {
+  @apply text-emerald-600;
+}
+
+.stat-change-negative {
+  @apply text-red-600;
+}
+```
+
+#### Data Tables
+```css
+.table-container {
+  @apply bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm;
+}
+
+.table-header {
+  @apply bg-gray-50 px-6 py-4 border-b border-gray-200;
+}
+
+.table-row {
+  @apply px-6 py-4 border-b border-gray-100 hover:bg-gray-50 transition-colors duration-150;
+}
+```
+
+### Interactive Elements
+- **Hover Effects**: Subtle scale transforms `hover:scale-[1.02]` or shadow changes
+- **Focus States**: Clear focus rings with `focus:ring-4 focus:ring-blue-500/50`
+- **Loading States**: Use spinner animations with `animate-spin`
+- **Disabled States**: Reduce opacity with `disabled:opacity-50 disabled:cursor-not-allowed`
+
+### Responsive Design
+- **Mobile First**: Start with mobile styles, then add larger breakpoints
+- **Breakpoints**: `sm:` (640px), `md:` (768px), `lg:` (1024px), `xl:` (1280px)
+- **Grid Adjustments**: Reduce columns on smaller screens
+- **Padding Adjustments**: Use responsive padding classes like `p-4 md:p-6 lg:p-8`
+
+### Component Patterns
+1. **Always use consistent border radius**: `rounded-xl` for cards, `rounded-lg` for smaller elements
+2. **Shadow Hierarchy**: `shadow-sm` for subtle elevation, `shadow-md` for hover states, `shadow-lg` for modals
+3. **Consistent Spacing**: Use the Tailwind spacing scale consistently
+4. **Color Usage**: Stick to the defined color palette, avoid arbitrary colors
+5. **Typography Scale**: Use the defined text sizes and weights consistently
+
+### Code Style
+- Use Tailwind CSS classes instead of custom CSS when possible
+- Group related classes together (layout, spacing, colors, effects)
+- Use component composition for reusable patterns
+- Maintain consistent naming conventions for custom classes
+
+Remember: The goal is to create a cohesive, professional, and accessible user interface that matches the modern dashboard aesthetic shown in the reference image.

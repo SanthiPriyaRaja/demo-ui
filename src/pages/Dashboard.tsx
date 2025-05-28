@@ -17,6 +17,10 @@ export const Dashboard: React.FC = () => {
     discarded: 0
   });
 
+  // Get stored tenant information
+  const storedSelectedTenant = localStorage.getItem('selectedTenant');
+  const storedTenantId = localStorage.getItem('tenantId');
+
   useEffect(() => {
     const fetchLeads = async () => {
       try {
@@ -43,6 +47,12 @@ export const Dashboard: React.FC = () => {
     logout();
   };
 
+  // Get tenant display name
+  const getTenantDisplayName = (tenantId: string) => {
+    const tenant = availableTenants.find(t => t.id === tenantId);
+    return tenant ? tenant.name : tenantId;
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
       {/* Header */}
@@ -55,6 +65,9 @@ export const Dashboard: React.FC = () => {
               </h1>
               <p className="text-sm text-gray-600 mt-1">
                 Welcome back, <span className="font-semibold">{user?.name}</span>!
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                Logged in to: <span className="font-medium text-blue-600">{getTenantDisplayName(user?.tenant || '')}</span>
               </p>
             </div>
             <Button variant="secondary" onClick={handleLogout} className="shadow-md">
@@ -116,24 +129,28 @@ export const Dashboard: React.FC = () => {
                 </div>
                 <dl className="space-y-4">
                   <div className="flex justify-between">
-                    <dt className="text-sm font-medium text-gray-500">Current Tenant</dt>
+                    <dt className="text-sm font-medium text-gray-500">Selected at Login</dt>
                     <dd className="text-sm font-semibold text-gray-900">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {user?.tenant || storedSelectedTenant || 'Not set'}
+                      </span>
+                    </dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-sm font-medium text-gray-500">Backend API ID</dt>
+                    <dd className="text-sm font-semibold text-gray-900">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        {user?.tenantId || storedTenantId || 'Not set'}
+                      </span>
+                    </dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-sm font-medium text-gray-500">Current URL Tenant</dt>
+                    <dd className="text-sm font-semibold text-gray-900">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                         {currentTenant}
                       </span>
                     </dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-sm font-medium text-gray-500">Backend Tenant ID</dt>
-                    <dd className="text-sm font-semibold text-gray-900">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                        {tenantId || user?.tenantId}
-                      </span>
-                    </dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-sm font-medium text-gray-500">User's Tenant</dt>
-                    <dd className="text-sm font-semibold text-gray-900">{user?.tenant}</dd>
                   </div>
                 </dl>
               </div>
@@ -162,15 +179,31 @@ export const Dashboard: React.FC = () => {
                     </dd>
                   </div>
                   <div className="flex justify-between">
-                    <dt className="text-sm font-medium text-gray-500">Bearer Token</dt>
+                    <dt className="text-sm font-medium text-gray-500">Login Time</dt>
                     <dd className="text-xs font-mono text-gray-900 break-all">
-                      {token ? `${token.substring(0, 20)}...` : 'Not available'}
+                      {token ? new Date().toLocaleTimeString() : 'Not available'}
                     </dd>
                   </div>
                   <div className="flex justify-between">
-                    <dt className="text-sm font-medium text-gray-500">Stored Tenant ID</dt>
-                    <dd className="text-sm font-mono text-gray-900">
-                      {tenantId || 'Not available'}
+                    <dt className="text-sm font-medium text-gray-500">High Security</dt>
+                    <dd className="text-xs text-gray-600">
+                      <div className="flex items-center">
+                        {localStorage.getItem('user') ? (
+                          <>
+                            <svg className="w-3 h-3 text-green-500 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                            <span className="text-green-600 font-medium">High Security Enabled</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-3 h-3 text-red-500 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                            </svg>
+                            <span className="text-red-600 font-medium">Security Disabled</span>
+                          </>
+                        )}
+                      </div>
                     </dd>
                   </div>
                 </dl>

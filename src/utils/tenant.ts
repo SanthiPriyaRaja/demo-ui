@@ -35,7 +35,13 @@ export const getTenantFromQuery = (): string | null => {
 };
 
 export const getCurrentTenant = (): string => {
-  // First try to get tenant from subdomain
+  // First try to get tenant from localStorage (stored during login)
+  const storedTenant = localStorage.getItem('selectedTenant');
+  if (storedTenant) {
+    return storedTenant;
+  }
+  
+  // Then try to get tenant from subdomain
   const subdomainTenant = getTenantFromSubdomain();
   if (subdomainTenant) {
     return subdomainTenant;

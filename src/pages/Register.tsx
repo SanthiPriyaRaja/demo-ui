@@ -3,7 +3,8 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../features/auth/AuthContext';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
-import { getCurrentTenant, getTenantApiId } from '../utils/tenant';
+import { getTenantApiId } from '../utils/tenant';
+import { useTenant } from '../features/tenant/TenantContext';
 import { apiService } from '../services/api';
 import type { RegisterData } from '../services/api';
 
@@ -21,20 +22,16 @@ interface FormErrors {
   selectedTenant?: string;
 }
 
-// Available tenants for the dropdown
-const AVAILABLE_TENANTS = [
-  { id: 'tenant1', name: 'Tenant 1 (TechNXT)', backendId: 'technxt' },
-  { id: 'tenant2', name: 'Tenant 2 (Iorta)', backendId: 'iorta' },  
-];
-
 export const Register: React.FC = () => {
+  const { currentTenant, availableTenants } = useTenant();
+  
   const [formData, setFormData] = useState<FormData>({
     firstName: '',
     lastName: '',
     email: '',
     password: '',
     confirmPassword: '',
-    selectedTenant: getCurrentTenant(), // Initialize with current tenant from URL
+    selectedTenant: currentTenant,
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,10 +42,17 @@ export const Register: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  const currentTenant = getCurrentTenant();
-  const selectedTenantInfo = AVAILABLE_TENANTS.find(t => t.id === formData.selectedTenant);
-  const backendTenantId = selectedTenantInfo ? selectedTenantInfo.backendId : getTenantApiId(formData.selectedTenant);
+  const selectedTenantInfo = availableTenants.find(t => t.id === formData.selectedTenant);
+  const backendTenantId = selectedTenantInfo ? getTenantApiId(selectedTenantInfo.id) : getTenantApiId(formData.selectedTenant);
   const from = location.state?.from?.pathname || '/dashboard';
+
+  // Update selected tenant when current tenant changes
+  useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      selectedTenant: currentTenant,
+    }));
+  }, [currentTenant]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -160,7 +164,7 @@ export const Register: React.FC = () => {
         email: '',
         password: '',
         confirmPassword: '',
-        selectedTenant: getCurrentTenant(),
+        selectedTenant: currentTenant,
       });
 
       // Redirect to login after 2 seconds
@@ -213,26 +217,6 @@ export const Register: React.FC = () => {
 
           {/* Form Section */}
           <div className="px-8 py-8">
-            {/* Tenant Selection Info */}
-            <div className="mb-6 text-center">
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
-                <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm2 6a2 2 0 114 0 2 2 0 01-4 0zm8 0a2 2 0 114 0 2 2 0 01-4 0z" clipRule="evenodd" />
-                </svg>
-                Selected: {formData.selectedTenant} → API: {backendTenantId}
-              </span>
-            </div>
-
-            {/* Debug Info (remove in production) */}
-            <div className="mb-6 p-3 bg-gray-50 rounded-lg border text-xs">
-              <div className="font-semibold text-gray-700 mb-2">Debug Info:</div>
-              <div className="space-y-1 text-gray-600">
-                <div>URL Tenant: {currentTenant}</div>
-                <div>Selected Tenant: {formData.selectedTenant}</div>
-                <div>Backend Tenant ID: {backendTenantId}</div>
-                <div>API Header: x-tenant-id: {backendTenantId}</div>
-              </div>
-            </div>
             
             <form className="space-y-5" onSubmit={handleSubmit}>
               {/* Tenant Selection Dropdown */}
@@ -252,7 +236,7 @@ export const Register: React.FC = () => {
                   required
                 >
                   <option value="">Choose your tenant...</option>
-                  {AVAILABLE_TENANTS.map((tenant) => (
+                  {availableTenants.map((tenant) => (
                     <option key={tenant.id} value={tenant.id}>
                       {tenant.name}
                     </option>

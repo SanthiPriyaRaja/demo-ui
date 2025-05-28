@@ -31,7 +31,6 @@ const mockUsers = [
     password: 'password',
     firstName: 'Admin',
     lastName: 'TechNXT',
-    tenant: 'tenant1', // Maps to 'technxt'
   },
   {
     id: '2',
@@ -39,7 +38,6 @@ const mockUsers = [
     password: 'password',
     firstName: 'User',
     lastName: 'Iorta',
-    tenant: 'tenant2', // Maps to 'iorta'
   },
   {
     id: '3',
@@ -47,7 +45,6 @@ const mockUsers = [
     password: 'password',
     firstName: 'Demo',
     lastName: 'User',
-    tenant: 'demo',
   },
   {
     id: '4',
@@ -55,7 +52,6 @@ const mockUsers = [
     password: '12345',
     firstName: 'Sai',
     lastName: 'Kumar',
-    tenant: 'tenant1', // Maps to 'technxt'
   },
 ];
 
@@ -80,6 +76,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Check if user is already logged in on app start
     const savedToken = localStorage.getItem('authToken');
     const savedTenantId = localStorage.getItem('tenantId');
+    const savedSelectedTenant = localStorage.getItem('selectedTenant');
     const savedUser = localStorage.getItem('user');
     
     if (savedToken && savedTenantId && savedUser) {
@@ -91,10 +88,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // Update API service with stored values
         apiService.setAuthData(savedToken, savedTenantId);
+        
+        // If we have a saved selected tenant, update the URL to match
+        if (savedSelectedTenant && savedSelectedTenant !== getCurrentTenant()) {
+          const url = new URL(window.location.href);
+          url.searchParams.set('tenant', savedSelectedTenant);
+          window.history.replaceState({}, '', url.toString());
+        }
+        
+        console.log('Restored auth data from localStorage:');
+        console.log('Token:', savedToken);
+        console.log('Selected Tenant:', savedSelectedTenant);
+        console.log('Tenant ID:', savedTenantId);
+        console.log('User:', parsedUser);
       } catch (err) {
         // Invalid saved user data, clear it
         localStorage.removeItem('authToken');
         localStorage.removeItem('tenantId');
+        localStorage.removeItem('selectedTenant');
         localStorage.removeItem('user');
       }
     }
@@ -107,40 +118,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setError(null);
     
     try {
+      // Ensure we have a tenant - use the provided tenant or get from URL
+      const selectedTenant = tenant || getCurrentTenant();
+      const selectedTenantId = getTenantApiId(selectedTenant);
+      
       // Try real API first
       try {
-        let response;
-        
-        if (tenant) {
-          // Use tenant-specific login
-          response = await apiService.loginWithTenant(email, password, tenant);
-        } else {
-          // Use default login with current tenant from URL
-          const currentTenant = getCurrentTenant();
-          response = await apiService.loginWithTenant(email, password, currentTenant);
-        }
+        const response = await apiService.loginWithTenant(email, password, selectedTenant);
         
         // Handle API response - check for both 'token' and 'access_token'
         const authToken = response.access_token || response.token;
         
         if (authToken && response.user) {
-          // IMPORTANT: Use tenant information from API response if available
-          // This allows different users to belong to different tenants
-          let userTenant: string;
-          let userTenantId: string;
-          
-          if (response.user.tenant || response.tenant) {
-            // If API returns tenant info, use that
-            const apiTenant = response.user.tenant || response.tenant;
-            userTenant = apiTenant;
-            userTenantId = getTenantApiId(apiTenant);
-          } else {
-            // Fallback to URL-based tenant if API doesn't return tenant info
-            const currentTenant = tenant || getCurrentTenant();
-            userTenant = currentTenant;
-            userTenantId = getTenantApiId(currentTenant);
-          }
-          
+          // Use the selected tenant from login form, not from API response
+          // This ensures the user's choice is respected
           const apiUser: User = {
             id: response.user.id || response.user._id || '1',
             email: response.user.email,
@@ -149,29 +140,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               : response.user.email,
             firstName: response.user.firstName,
             lastName: response.user.lastName,
-            tenant: userTenant,
-            tenantId: userTenantId,
+            tenant: selectedTenant,
+            tenantId: selectedTenantId,
           };
           
           // Save to localStorage
           localStorage.setItem('authToken', authToken);
-          localStorage.setItem('tenantId', userTenantId);
+          localStorage.setItem('tenantId', selectedTenantId);
+          localStorage.setItem('selectedTenant', selectedTenant);
           localStorage.setItem('user', JSON.stringify(apiUser));
           
           // Update state
           setUser(apiUser);
           setToken(authToken);
-          setTenantId(userTenantId);
+          setTenantId(selectedTenantId);
           
           // Update API service with auth data
-          apiService.setAuthData(authToken, userTenantId);
+          apiService.setAuthData(authToken, selectedTenantId);
           
           console.log('Login successful - Stored data:');
           console.log('Token:', authToken);
-          console.log('User Tenant:', userTenant);
-          console.log('User Tenant ID:', userTenantId);
+          console.log('Selected Tenant:', selectedTenant);
+          console.log('Tenant ID:', selectedTenantId);
           console.log('User:', apiUser);
-          console.log('Full API Response:', response);
           
           return;
         } else {
@@ -186,8 +177,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         );
         
         if (mockUser) {
-          const userTenant = mockUser.tenant;
-          const userTenantId = getTenantApiId(userTenant);
           const mockToken = 'mock-jwt-token-' + Date.now();
           
           const authenticatedUser: User = {
@@ -196,27 +185,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             name: `${mockUser.firstName} ${mockUser.lastName}`,
             firstName: mockUser.firstName,
             lastName: mockUser.lastName,
-            tenant: userTenant,
-            tenantId: userTenantId,
+            tenant: selectedTenant,
+            tenantId: selectedTenantId,
           };
           
           // Save to localStorage
           localStorage.setItem('authToken', mockToken);
-          localStorage.setItem('tenantId', userTenantId);
+          localStorage.setItem('tenantId', selectedTenantId);
+          localStorage.setItem('selectedTenant', selectedTenant);
           localStorage.setItem('user', JSON.stringify(authenticatedUser));
           
           // Update state
           setUser(authenticatedUser);
           setToken(mockToken);
-          setTenantId(userTenantId);
+          setTenantId(selectedTenantId);
           
           // Update API service with auth data
-          apiService.setAuthData(mockToken, userTenantId);
+          apiService.setAuthData(mockToken, selectedTenantId);
           
           console.log('Mock login successful - Stored data:');
           console.log('Token:', mockToken);
-          console.log('User Tenant:', userTenant);
-          console.log('User Tenant ID:', userTenantId);
+          console.log('Selected Tenant:', selectedTenant);
+          console.log('Tenant ID:', selectedTenantId);
           console.log('User:', authenticatedUser);
           
           return;
@@ -251,6 +241,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Clear localStorage
     localStorage.removeItem('authToken');
     localStorage.removeItem('tenantId');
+    localStorage.removeItem('selectedTenant');
     localStorage.removeItem('user');
     
     // Clear state
@@ -261,6 +252,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     // Clear API service auth data
     apiService.clearAuthData();
+    
+    // Clear tenant URL parameter
+    const url = new URL(window.location.href);
+    url.searchParams.delete('tenant');
+    window.history.replaceState({}, '', url.toString());
+    
+    // Dispatch custom event to notify TenantContext
+    window.dispatchEvent(new CustomEvent('logout'));
     
     console.log('Logout successful - Cleared all stored data');
   };

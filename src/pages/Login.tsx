@@ -3,28 +3,31 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../features/auth/AuthContext';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
-import { getCurrentTenant, getTenantApiId } from '../utils/tenant';
+import { getTenantApiId } from '../utils/tenant';
 import { useTenant } from '../features/tenant/TenantContext';
 
 interface FormData {
   email: string;
   password: string;
+  selectedTenant: string;
 }
 
 interface FormErrors {
   email?: string;
   password?: string;
+  selectedTenant?: string;
 }
 
 export const Login: React.FC = () => {
   const { login, error: authError, isLoading: authLoading, isAuthenticated } = useAuth();
-  const { currentTenant } = useTenant();
+  const { currentTenant, availableTenants, switchTenant } = useTenant();
   const navigate = useNavigate();
   const location = useLocation();
   
   const [formData, setFormData] = useState<FormData>({
     email: '',
     password: '',
+    selectedTenant: currentTenant,
   });
   
   const [errors, setErrors] = useState<FormErrors>({});
@@ -41,8 +44,16 @@ export const Login: React.FC = () => {
     }
   }, [registrationMessage, navigate, location.pathname]);
   
+  // Update selected tenant when current tenant changes
+  useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      selectedTenant: currentTenant,
+    }));
+  }, [currentTenant]);
+  
   // Get backend tenant ID for display
-  const backendTenantId = getTenantApiId(currentTenant);
+  const backendTenantId = getTenantApiId(formData.selectedTenant);
   
   // Redirect to dashboard if already authenticated
   useEffect(() => {
@@ -70,11 +81,15 @@ export const Login: React.FC = () => {
       newErrors.password = 'Password must be at least 5 characters';
     }
 
+    if (!formData.selectedTenant) {
+      newErrors.selectedTenant = 'Please select a tenant';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -87,6 +102,11 @@ export const Login: React.FC = () => {
         ...prev,
         [name]: undefined,
       }));
+    }
+
+    // If tenant is changed, update the URL
+    if (name === 'selectedTenant') {
+      switchTenant(value);
     }
   };
 
@@ -103,12 +123,12 @@ export const Login: React.FC = () => {
     try {
       // Debug logging
       console.log('Login attempt with:');
-      console.log('- Frontend Tenant:', currentTenant);
+      console.log('- Frontend Tenant:', formData.selectedTenant);
       console.log('- Backend Tenant ID:', backendTenantId);
       console.log('- Email:', formData.email);
       
-      // Use the current tenant from URL for login
-      await login(formData.email, formData.password, currentTenant);
+      // Use the selected tenant for login
+      await login(formData.email, formData.password, formData.selectedTenant);
       
       // Set success state
       setLoginSuccess(true);
@@ -145,6 +165,40 @@ export const Login: React.FC = () => {
 
           {/* Form Section */}
           <div className="px-8 py-8">
+            {/* Tenant Selection */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-3">
+                <label className="block text-sm font-semibold text-gray-700">
+                  Select Tenant
+                </label>
+              </div>
+              <select
+                name="selectedTenant"
+                value={formData.selectedTenant}
+                onChange={handleInputChange}
+                className={`block w-full px-4 py-3 border-2 rounded-xl shadow-sm focus:outline-none focus:ring-0 focus:border-blue-500 sm:text-sm transition-all duration-200 ease-in-out ${
+                  errors.selectedTenant 
+                    ? 'border-red-300 text-red-900 focus:border-red-500 bg-red-50' 
+                    : 'border-gray-200 focus:border-blue-500 bg-white hover:border-gray-300'
+                }`}
+              >
+                <option value="">Choose your tenant...</option>
+                {availableTenants.map((tenant) => (
+                  <option key={tenant.id} value={tenant.id}>
+                    {tenant.name}
+                  </option>
+                ))}
+              </select>
+              {errors.selectedTenant && (
+                <p className="mt-2 text-sm text-red-600 flex items-center" role="alert">
+                  <svg className="w-4 h-4 mr-1 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errors.selectedTenant}
+                </p>
+              )}
+            </div>
+
             {/* Registration Success Message */}
             {registrationMessage && (
               <div className="mb-6 rounded-xl bg-green-50 border border-green-200 p-4">
@@ -221,7 +275,7 @@ export const Login: React.FC = () => {
                   <div className="flex">
                     <div className="flex-shrink-0">
                       <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 0116 0zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 00-1.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                       </svg>
                     </div>
                     <div className="ml-3">

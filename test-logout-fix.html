@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logout Tenant Reset Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-step {
+            background: #f5f5f5;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #007bff;
+        }
+        .success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        .warning {
+            border-left-color: #ffc107;
+            background: #fff3cd;
+        }
+        .error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        code {
+            background: #e9ecef;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        .console-log {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Logout Tenant Reset Fix - Test Instructions</h1>
+    
+    <div class="test-step success">
+        <h3>✅ Issue Fixed</h3>
+        <p>Both <strong>Login</strong> and <strong>Register</strong> pages now properly reset the tenant dropdown to "Choose your tenant..." after logout instead of defaulting to "Tenant 1 (TechNXT)".</p>
+    </div>
+
+    <div class="test-step">
+        <h3>🔍 What Was Changed</h3>
+        <ul>
+            <li><strong>Login Page</strong>: Updated to use <code>useTenant()</code> context instead of <code>getCurrentTenant()</code> utility</li>
+            <li><strong>Register Page</strong>: Updated to use <code>useTenant()</code> context instead of <code>getCurrentTenant()</code> utility</li>
+            <li><strong>TenantContext</strong>: Added logout event listener to reset tenant state</li>
+            <li><strong>AuthContext</strong>: Added custom event dispatch during logout</li>
+        </ul>
+    </div>
+
+    <div class="test-step">
+        <h3>🧪 Testing Steps</h3>
+        <ol>
+            <li><strong>Start the application:</strong>
+                <div class="console-log">npm run dev</div>
+                <p>Application should be running on <code>http://localhost:5177/</code> (or next available port)</p>
+            </li>
+            
+            <li><strong>Test Login Page:</strong>
+                <ul>
+                    <li>Visit <code>http://localhost:5177/login</code></li>
+                    <li>Verify dropdown shows "Choose your tenant..." (not "Tenant 1 (TechNXT)")</li>
+                    <li>Select a tenant and login with demo credentials</li>
+                    <li>Logout from dashboard</li>
+                    <li>Verify dropdown resets to "Choose your tenant..."</li>
+                </ul>
+            </li>
+            
+            <li><strong>Test Register Page:</strong>
+                <ul>
+                    <li>Visit <code>http://localhost:5177/register</code></li>
+                    <li>Verify dropdown shows "Choose your tenant..." (not "Tenant 1 (TechNXT)")</li>
+                    <li>Select a tenant and fill registration form</li>
+                    <li>After registration, login and then logout</li>
+                    <li>Visit register page again and verify dropdown resets</li>
+                </ul>
+            </li>
+        </ol>
+    </div>
+
+    <div class="test-step">
+        <h3>🔍 Debug Console Logs</h3>
+        <p>Open browser console to see debug information:</p>
+        <div class="console-log">
+🔍 TenantContext - getInitialTenant:<br>
+  - savedSelectedTenant: null<br>
+  - queryTenant: null<br>
+  - hostname parts: ['localhost']<br>
+  - Returning empty string (no tenant found)<br>
+🏢 TenantContext - currentTenant changed to: <br>
+🚪 TenantContext - Logout event received, resetting tenant<br>
+🏢 TenantContext - currentTenant changed to: 
+        </div>
+    </div>
+
+    <div class="test-step success">
+        <h3>✅ Expected Results</h3>
+        <ul>
+            <li>After logout, both Login and Register pages show "Choose your tenant..." in dropdown</li>
+            <li>No automatic selection of "Tenant 1 (TechNXT)"</li>
+            <li>Console logs show tenant being reset to empty string</li>
+            <li>URL parameters are cleared after logout</li>
+        </ul>
+    </div>
+
+    <div class="test-step warning">
+        <h3>⚠️ Demo Credentials</h3>
+        <p>Use these credentials for testing:</p>
+        <ul>
+            <li><strong>Email:</strong> <code>admin@technxt.com</code></li>
+            <li><strong>Password:</strong> <code>password</code></li>
+        </ul>
+        <p>Or:</p>
+        <ul>
+            <li><strong>Email:</strong> <code>sai@gmail.com</code></li>
+            <li><strong>Password:</strong> <code>12345</code></li>
+        </ul>
+    </div>
+
+    <div class="test-step">
+        <h3>🔧 Technical Implementation</h3>
+        <p>The fix uses an event-driven approach:</p>
+        <ol>
+            <li><strong>AuthContext logout()</strong> dispatches custom 'logout' event</li>
+            <li><strong>TenantContext</strong> listens for 'logout' event</li>
+            <li>When logout event received, <code>currentTenant</code> is reset to empty string</li>
+            <li>Both Login and Register pages use <code>currentTenant</code> from context</li>
+            <li>Empty string results in "Choose your tenant..." being displayed</li>
+        </ol>
+    </div>
+
+    <script>
+        // Add some interactive testing
+        console.log('🧪 Logout Tenant Reset Test Page Loaded');
+        console.log('📝 Follow the testing steps above to verify the fix');
+        console.log('🔍 Check browser console for debug logs during testing');
+    </script>
+</body>
+</html> 
