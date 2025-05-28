@@ -11,9 +11,10 @@ export const Dashboard: React.FC = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [leadCounts, setLeadCounts] = useState({
     total: 0,
-    inProgress: 0,
+    open: 0,
+    converted: 0,
     rejected: 0,
-    archived: 0
+    discarded: 0
   });
 
   useEffect(() => {
@@ -25,9 +26,10 @@ export const Dashboard: React.FC = () => {
         // Calculate counts
         setLeadCounts({
           total: data.length,
-          inProgress: data.filter(lead => lead.leadStatus === 'In Progress').length,
+          open: data.filter(lead => lead.leadStatus === 'Open').length,
+          converted: data.filter(lead => lead.leadStatus === 'Converted').length,
           rejected: data.filter(lead => lead.leadStatus === 'Rejected').length,
-          archived: data.filter(lead => lead.leadStatus === 'Archived').length
+          discarded: data.filter(lead => lead.leadStatus === 'Discarded').length
         });
       } catch (error) {
         console.error('Error fetching leads:', error);
@@ -206,16 +208,20 @@ export const Dashboard: React.FC = () => {
                     <div className="text-sm text-blue-700 font-medium">Total Leads</div>
                   </div>
                   <div className="text-center p-4 bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl">
-                    <div className="text-3xl font-bold text-indigo-600 mb-1">{leadCounts.inProgress}</div>
-                    <div className="text-sm text-indigo-700 font-medium">In Progress</div>
+                    <div className="text-3xl font-bold text-indigo-600 mb-1">{leadCounts.open}</div>
+                    <div className="text-sm text-indigo-700 font-medium">Open</div>
                   </div>
                   <div className="text-center p-4 bg-gradient-to-br from-red-50 to-red-100 rounded-xl">
                     <div className="text-3xl font-bold text-red-600 mb-1">{leadCounts.rejected}</div>
                     <div className="text-sm text-red-700 font-medium">Rejected</div>
                   </div>
                   <div className="text-center p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl">
-                    <div className="text-3xl font-bold text-gray-600 mb-1">{leadCounts.archived}</div>
-                    <div className="text-sm text-gray-700 font-medium">Archived</div>
+                    <div className="text-3xl font-bold text-gray-600 mb-1">{leadCounts.converted}</div>
+                    <div className="text-sm text-gray-700 font-medium">Converted</div>
+                  </div>
+                  <div className="text-center p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl">
+                    <div className="text-3xl font-bold text-gray-600 mb-1">{leadCounts.discarded}</div>
+                    <div className="text-sm text-gray-700 font-medium">Discarded</div>
                   </div>
                 </div>
               </div>

@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from './ui/Button';
-import type { Lead } from '../types/Lead';
+import type { Lead, LeadProgress } from '../types/Lead';
 
-// Add custom scrollbar styling
 const scrollbarHideStyles = `
 .scrollbar-hide {
     -ms-overflow-style: none;  /* IE and Edge */
@@ -29,7 +28,7 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onS
         province: '',
         city: '',
         leadType: 'Support',
-        leadStatus: 'In Progress',
+        leadStatus: 'Open',
         leadProgress: 'New Lead Entry',
         allocatorRemarks: '',
         userRemarks: '',
@@ -161,6 +160,39 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onS
                                 </select>
                             </div>
                             <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Lead Status</label>
+                                <select
+                                    name="leadStatus"
+                                    value={formData.leadStatus}
+                                    onChange={handleChange}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    required
+                                >
+                                    <option value="Open">Open</option>
+                                    <option value="Converted">Converted</option>
+                                    <option value="Rejected">Rejected</option>
+                                    <option value="Discarded">Discarded</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Lead Progress</label>
+                                <select
+                                    name="leadProgress"
+                                    value={formData.leadProgress}
+                                    onChange={handleChange}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    required
+                                >
+                                    <option value="New Lead Entry">New Lead Entry</option>
+                                    <option value="Contacted">Contacted</option>
+                                    <option value="Qualified">Qualified</option>
+                                    <option value="Proposal Sent">Proposal Sent</option>
+                                    <option value="Negotiation">Negotiation</option>
+                                    <option value="Closed Won">Closed Won</option>
+                                    <option value="Closed Lost">Closed Lost</option>
+                                </select>
+                            </div>
+                            <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Appointment Date</label>
                                 <input
                                     type="date"
@@ -209,4 +241,4 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onS
             </div>
         </>
     );
-}; 
+};

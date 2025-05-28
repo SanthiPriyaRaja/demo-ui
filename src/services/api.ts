@@ -33,6 +33,7 @@ class ApiService {
       timeout: 10000,
       headers: {
         'Content-Type': 'application/json',
+        'x-tenant-id': 'technxt'
       },
     });
 
@@ -76,34 +77,8 @@ class ApiService {
           }
         }
         
-        // Add tenant header with proper mapping (only if not already set)
-        if (!config.headers['x-tenant-id']) {
-          // Priority order: stored tenantId > localStorage > current tenant
-          let tenantIdToUse = null;
-          
-          if (this.tenantId) {
-            tenantIdToUse = this.tenantId;
-          } else {
-            const savedTenantId = localStorage.getItem('tenantId');
-            if (savedTenantId) {
-              tenantIdToUse = savedTenantId;
-            } else {
-              tenantIdToUse = getTenantApiId(this.currentTenant);
-            }
-          }
-          
-          config.headers['x-tenant-id'] = tenantIdToUse;
-        }
-        
-        // Log headers being sent (remove in production)
-        console.log('API Request Headers:', {
-          'Authorization': config.headers.Authorization ? 'Bearer ***' : 'Not set',
-          'x-tenant-id': config.headers['x-tenant-id'],
-          'Content-Type': config.headers['Content-Type']
-        });
-        console.log('Request URL:', config.url);
-        console.log('Request Method:', config.method?.toUpperCase());
-        console.log('Request Data:', config.data);
+        // Add tenant header
+        config.headers['x-tenant-id'] = 'technxt';
         
         return config;
       },
@@ -202,4 +177,4 @@ class ApiService {
 
 // Create and export a singleton instance
 export const apiService = new ApiService();
-export default apiService; 
+export default apiService;

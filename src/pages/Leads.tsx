@@ -5,6 +5,7 @@ import { leadService } from '../services/leadService';
 import { LeadCard } from '../components/LeadCard';
 import { Button } from '../components/ui/Button';
 import { AddLeadModal } from '../components/AddLeadModal';
+import { FilterLeadsModal, type LeadFilters } from '../components/FilterLeadsModal';
 
 const getTenantColors = (tenant: string) => {
     switch (tenant) {
@@ -59,17 +60,22 @@ export const Leads: React.FC = () => {
     const { currentTenant } = useTenant();
     const [currentPage, setCurrentPage] = useState(1);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+    const [filters, setFilters] = useState<LeadFilters>({});
     const itemsPerPage = 10;
 
     const tenantColors = getTenantColors(currentTenant);
-    const tabs: LeadTab[] = ['All', 'In Progress', 'Rejected', 'Archived'];
+    const tabs: LeadTab[] = ['All', 'Open', 'Converted', 'Rejected', 'Discarded'];
 
     useEffect(() => {
         const fetchLeads = async () => {
             try {
                 setLoading(true);
                 setError(null);
-                const data = await leadService.getLeads(currentTenant);
+                const data = await leadService.getLeads(currentTenant, {
+                    ...filters,
+                    leadStatus: activeTab !== 'All' ? activeTab : filters.leadStatus
+                });
                 setLeads(data);
             } catch (err) {
                 setError('Failed to fetch leads. Please try again later.');
@@ -80,32 +86,28 @@ export const Leads: React.FC = () => {
         };
 
         fetchLeads();
-    }, [currentTenant]);
-
-    const filteredLeads = activeTab === 'All' 
-        ? leads 
-        : leads.filter(lead => lead.leadStatus === activeTab);
-
-    const totalPages = Math.ceil(filteredLeads.length / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const currentLeads = filteredLeads.slice(startIndex, endIndex);
+    }, [currentTenant, activeTab, filters]);
 
     const handleAddLead = async (newLead: Partial<Lead>) => {
         try {
-            // In a real application, you would make an API call here
-            // For now, we'll just add it to the local state
-            const lead = {
-                ...newLead,
-                id: Date.now().toString(), // temporary ID generation
-            } as Lead;
-            
-            setLeads(prev => [lead, ...prev]);
+            const createdLead = await leadService.createLead(currentTenant, newLead);
+            setLeads(prev => [createdLead, ...prev]);
         } catch (error) {
             console.error('Error adding lead:', error);
             setError('Failed to add lead. Please try again.');
         }
     };
+
+    const handleApplyFilters = (newFilters: LeadFilters) => {
+        setFilters(newFilters);
+        setCurrentPage(1); // Reset to first page when filters change
+    };
+
+    const filteredLeads = leads;
+    const totalPages = Math.ceil(filteredLeads.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const currentLeads = filteredLeads.slice(startIndex, endIndex);
 
     return (
         <div className="min-h-screen bg-[#F5F5F5]">
@@ -131,7 +133,7 @@ export const Leads: React.FC = () => {
                             </div>
                         </div>
                         
-                        {/* Tabs and Add Button */}
+                        {/* Tabs and Action Buttons */}
                         <div className="flex justify-between items-center mt-6">
                             <div className="flex flex-wrap gap-2">
                                 {tabs.map((tab) => (
@@ -148,28 +150,66 @@ export const Leads: React.FC = () => {
                                     </button>
                                 ))}
                             </div>
-                            <Button
-                                variant="primary"
-                                onClick={() => setIsAddModalOpen(true)}
-                                className="bg-white text-gray-900 hover:bg-gray-50 shadow-md"
-                            >
-                                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                </svg>
-                                Add Lead
-                            </Button>
+                            <div className="flex gap-2">
+                                <Button
+                                    variant="primary"
+                                    onClick={() => setIsFilterModalOpen(true)}
+                                    className="bg-white/20 text-white hover:bg-white/30 shadow-md"
+                                >
+                                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                                    </svg>
+                                    Filter
+                                </Button>
+                                <Button
+                                    variant="primary"
+                                    onClick={() => setIsAddModalOpen(true)}
+                                    className="bg-white text-gray-900 hover:bg-gray-50 shadow-md"
+                                >
+                                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    Add Lead
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </header>
 
             <main className="max-w-7xl mx-auto py-8 sm:px-6 lg:px-8">
-                {/* Tabs and Content */}
+                {/* Content */}
                 <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100
                     shadow-[0_3px_10px_rgb(0,0,0,0.1),0_0_3px_rgb(0,0,0,0.05)] 
                     hover:shadow-[0_20px_25px_-5px_rgb(0,0,0,0.1),0_10px_10px_-5px_rgb(0,0,0,0.04)] 
                     transition-all duration-300">
                     <div className="px-6 py-4">
+                        {/* Active Filters */}
+                        {Object.keys(filters).length > 0 && (
+                            <div className="mb-4 flex flex-wrap gap-2">
+                                {Object.entries(filters).map(([key, value]) => value && (
+                                    <span key={key} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                        {key}: {value}
+                                        <button
+                                            onClick={() => handleApplyFilters({
+                                                ...filters,
+                                                [key]: undefined
+                                            })}
+                                            className="ml-2 text-blue-600 hover:text-blue-800"
+                                        >
+                                            ×
+                                        </button>
+                                    </span>
+                                ))}
+                                <button
+                                    onClick={() => handleApplyFilters({})}
+                                    className="text-sm text-gray-500 hover:text-gray-700"
+                                >
+                                    Clear all filters
+                                </button>
+                            </div>
+                        )}
+
                         {/* Error Message */}
                         {error && (
                             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl mb-4
@@ -194,12 +234,12 @@ export const Leads: React.FC = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {currentLeads.length > 0 ? (
                                         currentLeads.map((lead) => (
-                                            <LeadCard key={lead.email} lead={lead} />
+                                            <LeadCard key={lead._id} lead={lead} />
                                         ))
                                     ) : (
                                         <div className="col-span-2 text-center text-gray-500 py-8 bg-white/80 backdrop-blur-sm rounded-xl
                                             shadow-[0_2px_8px_rgb(0,0,0,0.08)]">
-                                            No applications found for this status.
+                                            No leads found matching your criteria.
                                         </div>
                                     )}
                                 </div>
@@ -236,12 +276,18 @@ export const Leads: React.FC = () => {
                 </div>
             </main>
 
-            {/* Add Lead Modal */}
+            {/* Modals */}
             <AddLeadModal
                 isOpen={isAddModalOpen}
                 onClose={() => setIsAddModalOpen(false)}
                 onSubmit={handleAddLead}
             />
+            <FilterLeadsModal
+                isOpen={isFilterModalOpen}
+                onClose={() => setIsFilterModalOpen(false)}
+                onApplyFilters={handleApplyFilters}
+                initialFilters={filters}
+            />
         </div>
     );
-}; 
+};
