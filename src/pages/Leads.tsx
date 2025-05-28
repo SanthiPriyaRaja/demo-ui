@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useTenant } from '../features/tenant/TenantContext';
 import type { Lead, LeadTab } from '../types/Lead';
 import { leadService } from '../services/leadService';
@@ -121,9 +122,9 @@ export const Leads: React.FC = () => {
                                     Leads
                                 </h1>
                                 <div className="flex items-center space-x-2 text-sm text-white/80 mt-1">
-                                    <span>Dashboard</span>
+                                    <Link to={`/dashboard/${currentTenant}`} className="hover:text-white transition-colors duration-200">Dashboard</Link>
                                     <span>›</span>
-                                    <span>Application-Listing</span>
+                                    <span>Leads</span>
                                 </div>
                             </div>
                             <div className="flex items-center space-x-2">
