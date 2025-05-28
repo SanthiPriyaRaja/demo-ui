@@ -1,0 +1,92 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# API Service Standards
+
+1. Type Safety:
+- Define interfaces for request/response data
+- Use TypeScript generics with axios
+- Export services as const objects with typed methods
+- Add JSDoc comments for all public methods
+- Define error interfaces for consistent error handling
+
+2. Error Handling:
+- Use try/catch blocks for all API calls
+- Use instanceof AxiosError for type-safe error checking
+- Create consistent error objects with message, status, and data
+- Return empty arrays for GET requests on error (prevent UI crashes)
+- Throw errors for POST/PUT/DELETE operations
+- Log errors with appropriate context
+
+3. Configuration:
+- Use environment variables for API URLs (VITE_API_URL)
+- Set reasonable timeout values (default: 10000ms)
+- Configure base URL in axios instance
+- Provide fallback values for development
+
+4. Authentication & Headers:
+- Use interceptors to handle auth headers
+- Get auth token from localStorage
+- Include 'Authorization' header with Bearer token
+- Include 'x-tenant-id' header from tenant context
+- Always set 'Content-Type: application/json'
+
+Example Implementation:
+```typescript
+// Types
+interface ServiceError {
+    message: string;
+    status?: number;
+    data?: unknown;
+}
+
+// Config
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+// Axios instance
+const axiosInstance = axios.create({
+    baseURL: API_URL,
+    timeout: 10000,
+});
+
+// Headers interceptor
+axiosInstance.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+    const token = localStorage.getItem('authToken');
+    const tenantId = localStorage.getItem('tenantId');
+    
+    if (!config.headers) {
+        config.headers = new AxiosHeaders();
+    }
+    
+    if (token) {
+        config.headers.set('Authorization', `Bearer ${token}`);
+    }
+    if (tenantId) {
+        config.headers.set('x-tenant-id', tenantId);
+    }
+    config.headers.set('Content-Type', 'application/json');
+    
+    return config;
+});
+
+// Error handling example
+try {
+    const response = await axiosInstance.get<DataType[]>(url);
+    return response.data;
+} catch (error) {
+    const apiError: ServiceError = {
+        message: 'Operation failed'
+    };
+
+    if (error instanceof AxiosError) {
+        apiError.status = error.response?.status;
+        apiError.data = error.response?.data;
+        console.error('API Error:', apiError);
+    }
+    
+    // Return empty array for GET, throw for mutations
+    return isGet ? [] : throw error;
+}
+

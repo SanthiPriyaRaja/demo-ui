@@ -1,0 +1,100 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Lead Component Standards
+
+1. LeadCard Component:
+- Props must include complete Lead type
+- Implement status color mapping
+- Use proper date formatting
+- Follow card layout structure
+- Include hover and animation effects
+
+2. Filter Components:
+- Use controlled form inputs
+- Implement proper filter state management
+- Include reset functionality
+- Support multiple filter types
+- Maintain filter state persistence
+
+3. Shared Styling:
+```typescript
+// Card styling
+const cardStyle = `
+    bg-white rounded-2xl border border-gray-200
+    shadow-[0_2px_4px_rgba(0,0,0,0.02),0_4px_16px_rgba(0,0,0,0.06)] 
+    hover:shadow-[0_8px_16px_rgba(0,0,0,0.08),0_16px_32px_rgba(0,0,0,0.06)] 
+    transition-all duration-300 transform hover:scale-[1.02]
+`;
+
+// Status color mapping
+const getStatusColor = (status: string) => {
+    switch (status) {
+        case 'Open':
+            return 'bg-blue-100 text-blue-800';
+        case 'Converted':
+            return 'bg-green-100 text-green-800';
+        case 'Rejected':
+            return 'bg-red-100 text-red-800';
+        case 'Discarded':
+            return 'bg-gray-100 text-gray-800';
+        default:
+            return 'bg-gray-100 text-gray-800';
+    }
+};
+```
+
+4. Filter Modal Structure:
+```typescript
+interface FilterLeadsModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onApplyFilters: (filters: LeadFilters) => void;
+    initialFilters?: LeadFilters;
+}
+
+interface LeadFilters {
+    search?: string;
+    leadStatus?: string;
+    leadType?: string;
+    leadProgress?: string;
+    province?: string;
+    city?: string;
+}
+```
+
+5. Lead Type Definition:
+```typescript
+interface Lead {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    mobileNo: string;
+    city: string;
+    province: string;
+    leadStatus: 'Open' | 'Converted' | 'Rejected' | 'Discarded';
+    leadType: string;
+    leadProgress: string;
+    appointmentDate: string;
+    createdAt: string;
+    userRemarks: string;
+}
+
+type LeadTab = 'All' | 'Open' | 'Converted' | 'Rejected' | 'Discarded';
+```
+
+6. Best Practices:
+- Use proper TypeScript types for all props
+- Implement proper loading states
+- Handle empty states gracefully
+- Use consistent error handling
+- Follow accessibility guidelines
+- Implement proper form validation
+- Use proper React key props
+- Maintain responsive design
+- Use proper date formatting
+- Implement proper state management
+

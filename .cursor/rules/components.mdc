@@ -1,0 +1,81 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# React Component Standards
+
+1. Component Structure:
+- Use functional components with TypeScript
+- Define prop interfaces at the top of the file
+- Use React.FC type with explicit prop interface
+- Export components as named exports
+- Group related components in the same directory
+
+2. Props and Types:
+- Define clear, descriptive prop interfaces
+- Use TypeScript for strict type checking
+- Make optional props explicit with '?'
+- Document complex props with JSDoc comments
+- Import types from dedicated type files
+
+3. State Management:
+- Use appropriate React hooks (useState, useEffect)
+- Implement proper cleanup in useEffect
+- Handle loading and error states
+- Use controlled components for forms
+- Lift state up when needed
+
+4. Styling:
+- Use Tailwind CSS for styling
+- Follow utility-first approach
+- Use consistent color schemes
+- Implement responsive design
+- Use proper spacing and layout classes
+
+5. Event Handling:
+- Type event handlers properly
+- Use proper event types (React.ChangeEvent, etc.)
+- Implement proper error boundaries
+- Handle edge cases and loading states
+
+Example Component Structure:
+```typescript
+import React, { useState, useEffect } from 'react';
+import type { ComponentType } from '../types/ComponentType';
+
+interface ExampleProps {
+    data: ComponentType;
+    onAction: (id: string) => void;
+    isLoading?: boolean;
+}
+
+export const ExampleComponent: React.FC<ExampleProps> = ({
+    data,
+    onAction,
+    isLoading = false
+}) => {
+    const [state, setState] = useState<string>('');
+
+    useEffect(() => {
+        // Effect logic
+        return () => {
+            // Cleanup
+        };
+    }, [dependencies]);
+
+    const handleAction = (e: React.MouseEvent) => {
+        // Handler logic
+    };
+
+    if (isLoading) {
+        return <LoadingState />;
+    }
+
+    return (
+        <div className="bg-white rounded-lg shadow-md p-4">
+            {/* Component content */}
+        </div>
+    );
+};
+

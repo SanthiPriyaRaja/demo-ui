@@ -1,27 +1,59 @@
-import axios from 'axios';
+import axios, { type InternalAxiosRequestConfig, AxiosHeaders, AxiosError } from 'axios';
 import type { Lead } from '../types/Lead';
 
-const API_URL = 'http://localhost:3000';
+// Types for request/response
+interface LeadFilters {
+    search?: string;
+    leadStatus?: string;
+    leadType?: string;
+    leadProgress?: string;
+    province?: string;
+    city?: string;
+}
+
+interface LeadServiceError {
+    message: string;
+    status?: number;
+    data?: unknown;
+}
+
+// API configuration
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 // Create axios instance with default config
 const axiosInstance = axios.create({
     baseURL: API_URL,
-    headers: {
-        'x-tenant-id': 'technxt',
-        'Content-Type': 'application/json',
-    },
     timeout: 10000,
 });
 
+// Add request interceptor to dynamically set headers
+axiosInstance.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+    const token = localStorage.getItem('authToken');
+    const tenantId = localStorage.getItem('tenantId');
+    
+    if (!config.headers) {
+        config.headers = new AxiosHeaders();
+    }
+    
+    if (token) {
+        config.headers.set('Authorization', `Bearer ${token}`);
+    }
+    if (tenantId) {
+        config.headers.set('x-tenant-id', tenantId);
+    }
+    config.headers.set('Content-Type', 'application/json');
+    
+    return config;
+});
+
 export const leadService = {
-    getLeads: async (tenantId: string, filters?: {
-        search?: string;
-        leadStatus?: string;
-        leadType?: string;
-        leadProgress?: string;
-        province?: string;
-        city?: string;
-    }) => {
+    /**
+     * Get leads with optional filters
+     * @param tenantId - The tenant identifier
+     * @param filters - Optional filters for the leads query
+     * @returns Promise<Lead[]> - Array of leads
+     */
+    getLeads: async (tenantId: string, filters?: LeadFilters): Promise<Lead[]> => {
         try {
             let url = '/lead';
             
@@ -39,33 +71,48 @@ export const leadService = {
             const response = await axiosInstance.get<Lead[]>(url);
             return response.data;
         } catch (error) {
-            if (axios.isAxiosError(error)) {
-                console.error('API Error:', {
-                    message: error.message,
-                    status: error.response?.status,
-                    data: error.response?.data
-                });
+            const apiError: LeadServiceError = {
+                message: 'Failed to fetch leads'
+            };
+
+            if (error instanceof AxiosError) {
+                apiError.status = error.response?.status;
+                apiError.data = error.response?.data;
+                console.error('API Error:', apiError);
             } else {
                 console.error('Error fetching leads:', error);
             }
-            return []; // Return empty array instead of throwing to prevent UI crashes
+            
+            // Return empty array for GET requests to prevent UI crashes
+            return [];
         }
     },
 
-    createLead: async (tenantId: string, leadData: Partial<Lead>) => {
+    /**
+     * Create a new lead
+     * @param tenantId - The tenant identifier
+     * @param leadData - The lead data to create
+     * @returns Promise<Lead> - The created lead
+     * @throws {AxiosError} When the API request fails
+     */
+    createLead: async (tenantId: string, leadData: Partial<Lead>): Promise<Lead> => {
         try {
             const response = await axiosInstance.post<Lead>('/lead', leadData);
             return response.data;
         } catch (error) {
-            if (axios.isAxiosError(error)) {
-                console.error('API Error:', {
-                    message: error.message,
-                    status: error.response?.status,
-                    data: error.response?.data
-                });
+            const apiError: LeadServiceError = {
+                message: 'Failed to create lead'
+            };
+
+            if (error instanceof AxiosError) {
+                apiError.status = error.response?.status;
+                apiError.data = error.response?.data;
+                console.error('API Error:', apiError);
             } else {
                 console.error('Error creating lead:', error);
             }
+            
+            // Rethrow error for create operations
             throw error;
         }
     }
