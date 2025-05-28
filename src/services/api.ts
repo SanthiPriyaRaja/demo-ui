@@ -78,7 +78,14 @@ class ApiService {
         }
         
         // Add tenant header
-        config.headers['x-tenant-id'] = 'technxt';
+        if (this.tenantId) {
+          config.headers['x-tenant-id'] = this.tenantId;
+        } else {
+          const storedTenantId = localStorage.getItem('tenantId');
+          if (storedTenantId) {
+            config.headers['x-tenant-id'] = storedTenantId;
+          }
+        }
         
         return config;
       },

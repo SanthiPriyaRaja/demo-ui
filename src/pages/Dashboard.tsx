@@ -296,7 +296,7 @@ export const Dashboard: React.FC = () => {
                   </div>
                   <div className="text-center p-4 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl">
                     <div className="text-3xl font-bold text-orange-600 mb-1">
-                      {((leadCounts.converted / leadCounts.total) * 100).toFixed(1)}%
+                      {leadCounts.total > 0 ? ((leadCounts.converted / leadCounts.total) * 100).toFixed(1) : '0.0'}%
                     </div>
                     <div className="text-sm text-orange-700 font-medium">Conversion Rate</div>
                   </div>

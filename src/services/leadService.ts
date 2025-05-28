@@ -1,5 +1,6 @@
 import axios, { type InternalAxiosRequestConfig, AxiosHeaders, AxiosError } from 'axios';
 import type { Lead } from '../types/Lead';
+import { getApiUrl } from '../config';
 
 // Types for request/response
 interface LeadFilters {
@@ -17,34 +18,31 @@ interface LeadServiceError {
     data?: unknown;
 }
 
-// API configuration
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
 // Create axios instance with default config
-const axiosInstance = axios.create({
-    baseURL: API_URL,
-    timeout: 10000,
-});
+const createAxiosInstance = () => {
+    const instance = axios.create({
+        baseURL: getApiUrl(),
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    });
 
-// Add request interceptor to dynamically set headers
-axiosInstance.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem('authToken');
-    const tenantId = localStorage.getItem('tenantId');
-    
-    if (!config.headers) {
-        config.headers = new AxiosHeaders();
-    }
-    
-    if (token) {
-        config.headers.set('Authorization', `Bearer ${token}`);
-    }
-    if (tenantId) {
-        config.headers.set('x-tenant-id', tenantId);
-    }
-    config.headers.set('Content-Type', 'application/json');
-    
-    return config;
-});
+    // Add request interceptor to set auth and tenant headers
+    instance.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+        const token = localStorage.getItem('authToken');
+        const tenantId = localStorage.getItem('tenantId');
+        
+        if (token) {
+            (config.headers as AxiosHeaders).set('Authorization', `Bearer ${token}`);
+        }
+        if (tenantId) {
+            (config.headers as AxiosHeaders).set('X-Tenant-ID', tenantId);
+        }
+        return config;
+    });
+
+    return instance;
+};
 
 export const leadService = {
     /**
@@ -68,6 +66,7 @@ export const leadService = {
                 }
             }
 
+            const axiosInstance = createAxiosInstance();
             const response = await axiosInstance.get<Lead[]>(url);
             return response.data;
         } catch (error) {
@@ -75,9 +74,9 @@ export const leadService = {
                 message: 'Failed to fetch leads'
             };
 
-            if (error instanceof AxiosError) {
-                apiError.status = error.response?.status;
-                apiError.data = error.response?.data;
+            if (error && typeof error === 'object' && 'response' in error) {
+                apiError.status = (error as AxiosError).response?.status;
+                apiError.data = (error as AxiosError).response?.data;
                 console.error('API Error:', apiError);
             } else {
                 console.error('Error fetching leads:', error);
@@ -97,6 +96,7 @@ export const leadService = {
      */
     createLead: async (tenantId: string, leadData: Partial<Lead>): Promise<Lead> => {
         try {
+            const axiosInstance = createAxiosInstance();
             const response = await axiosInstance.post<Lead>('/lead', leadData);
             return response.data;
         } catch (error) {
@@ -104,9 +104,9 @@ export const leadService = {
                 message: 'Failed to create lead'
             };
 
-            if (error instanceof AxiosError) {
-                apiError.status = error.response?.status;
-                apiError.data = error.response?.data;
+            if (error && typeof error === 'object' && 'response' in error) {
+                apiError.status = (error as AxiosError).response?.status;
+                apiError.data = (error as AxiosError).response?.data;
                 console.error('API Error:', apiError);
             } else {
                 console.error('Error creating lead:', error);

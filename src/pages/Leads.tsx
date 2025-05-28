@@ -222,7 +222,15 @@ export const Leads: React.FC = () => {
                         {/* Loading State */}
                         {loading ? (
                             <div className="flex justify-center items-center h-64">
-                                <div className={`animate-spin rounded-full h-12 w-12 border-b-2 ${tenantColors.buttonPrimary.split(' ')[0].replace('bg-', 'border-')}`}></div>
+                                <div 
+                                    className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"
+                                    role="status"
+                                    aria-label="Loading leads"
+                                />
+                            </div>
+                        ) : error ? (
+                            <div className="flex justify-center items-center h-64">
+                                <p className="text-red-600">{error}</p>
                             </div>
                         ) : (
                             <>

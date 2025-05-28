@@ -15,6 +15,7 @@ export const Input: React.FC<InputProps> = ({
   ...props
 }) => {
   const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
+  const errorId = error ? `${inputId}-error` : undefined;
   
   const inputClasses = `
     block w-full px-4 py-3 border-2 rounded-xl shadow-sm placeholder-gray-400 
@@ -38,6 +39,8 @@ export const Input: React.FC<InputProps> = ({
         <input
           id={inputId}
           className={inputClasses}
+          aria-invalid={error ? 'true' : 'false'}
+          aria-describedby={errorId}
           {...props}
         />
         {error && (
@@ -49,7 +52,7 @@ export const Input: React.FC<InputProps> = ({
         )}
       </div>
       {error && (
-        <p className="text-sm text-red-600 flex items-center" role="alert">
+        <p id={errorId} className="text-sm text-red-600 flex items-center" role="alert">
           <svg className="w-4 h-4 mr-1 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
           </svg>
@@ -57,12 +60,7 @@ export const Input: React.FC<InputProps> = ({
         </p>
       )}
       {helperText && !error && (
-        <p className="text-sm text-gray-500 flex items-center">
-          <svg className="w-4 h-4 mr-1 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-          </svg>
-          {helperText}
-        </p>
+        <p className="text-sm text-gray-500">{helperText}</p>
       )}
     </div>
   );

@@ -89,14 +89,6 @@ describe('Input Component', () => {
       
       expect(screen.getByText('This is helpful information')).toBeInTheDocument();
     });
-
-    test('shows helper icon when no error and helper text exists', () => {
-      render(<Input helperText="Helper text" />);
-      
-      const helperText = screen.getByText('Helper text');
-      const helperIcon = helperText.querySelector('svg');
-      expect(helperIcon).toBeInTheDocument();
-    });
   });
 
   describe('User Interactions', () => {

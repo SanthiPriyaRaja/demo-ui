@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../features/auth/AuthContext';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
-import { getTenantApiId } from '../utils/tenant';
 import { useTenant } from '../features/tenant/TenantContext';
+import { Input } from '../components/ui/Input';
 
 interface FormData {
   email: string;
@@ -19,55 +17,33 @@ interface FormErrors {
 }
 
 export const Login: React.FC = () => {
-  const { login, error: authError, isLoading: authLoading, isAuthenticated } = useAuth();
-  const { currentTenant, availableTenants, switchTenant } = useTenant();
   const navigate = useNavigate();
   const location = useLocation();
-  
+  const { login } = useAuth();
+  const { availableTenants } = useTenant();
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     email: '',
     password: '',
-    selectedTenant: currentTenant,
+    selectedTenant: '',
   });
-  
   const [errors, setErrors] = useState<FormErrors>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [loginSuccess, setLoginSuccess] = useState(false);
-  
-  // Get registration success message from navigation state
-  const registrationMessage = location.state?.message;
-  
-  // Clear registration message from state after displaying
-  useEffect(() => {
-    if (registrationMessage) {
-      navigate(location.pathname, { replace: true, state: {} });
-    }
-  }, [registrationMessage, navigate, location.pathname]);
-  
-  // Update selected tenant when current tenant changes
-  useEffect(() => {
-    setFormData(prev => ({
-      ...prev,
-      selectedTenant: currentTenant,
-    }));
-  }, [currentTenant]);
-  
-  // Get backend tenant ID for display
-  const backendTenantId = getTenantApiId(formData.selectedTenant);
-  
-  // Redirect to dashboard if already authenticated
-  useEffect(() => {
-    if (isAuthenticated && !authLoading) {
-      // Add a small delay to show success message if it was just set
-      const redirectDelay = loginSuccess ? 1500 : 0;
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, redirectDelay);
-    }
-  }, [isAuthenticated, authLoading, navigate, loginSuccess]);
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
 
-  const validateForm = (): boolean => {
+  useEffect(() => {
+    // Check if coming from registration
+    if (location.state?.registrationSuccess) {
+      setRegistrationSuccess(true);
+    }
+  }, [location.state]);
+
+  const validateForm = () => {
     const newErrors: FormErrors = {};
+
+    if (!formData.selectedTenant) {
+      newErrors.selectedTenant = 'Please select a tenant';
+    }
 
     if (!formData.email) {
       newErrors.email = 'Email is required';
@@ -81,33 +57,15 @@ export const Login: React.FC = () => {
       newErrors.password = 'Password must be at least 5 characters';
     }
 
-    if (!formData.selectedTenant) {
-      newErrors.selectedTenant = 'Please select a tenant';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value,
-    }));
-    
-    // Clear error when user starts typing
-    if (errors[name as keyof FormErrors]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: undefined,
-      }));
-    }
-
-    // If tenant is changed, update the URL
-    if (name === 'selectedTenant') {
-      switchTenant(value);
-    }
+    setFormData(prev => ({ ...prev, [name]: value }));
+    setErrors(prev => ({ ...prev, [name]: undefined }));
+    setLoginError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -117,54 +75,51 @@ export const Login: React.FC = () => {
       return;
     }
 
-    setIsSubmitting(true);
-    setLoginSuccess(false);
-    
     try {
-      // Debug logging
-      console.log('Login attempt with:');
-      console.log('- Frontend Tenant:', formData.selectedTenant);
-      console.log('- Backend Tenant ID:', backendTenantId);
-      console.log('- Email:', formData.email);
-      
-      // Use the selected tenant for login
+      setIsLoading(true);
+      setLoginError(null);
       await login(formData.email, formData.password, formData.selectedTenant);
-      
-      // Set success state
-      setLoginSuccess(true);
-      
-      // Navigation will happen automatically via useEffect when isAuthenticated changes
-    } catch (err) {
-      // Error is handled by AuthContext
-      console.error('Login error:', err);
-      setLoginSuccess(false);
+      const redirectPath = location.state?.from?.pathname || '/';
+      navigate(redirectPath);
+    } catch (error) {
+      console.error('Login failed:', error);
+      setLoginError('Login failed: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full">
-        {/* Main Card */}
         <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
-          {/* Header Section */}
           <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-8 text-center">
             <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-white mb-2">
-              Welcome Back
-            </h2>
-            <p className="text-blue-100 text-sm">
-              Sign in to your account
-            </p>
+            <h2 className="text-2xl font-bold text-white mb-2">Welcome Back</h2>
+            <p className="text-blue-100 text-sm">Sign in to your account</p>
           </div>
-
-          {/* Form Section */}
           <div className="px-8 py-8">
+            {registrationSuccess && (
+              <div className="mb-6 rounded-xl bg-green-50 border border-green-200 p-4">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-green-700">
+                      Registration successful! Please log in.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Tenant Selection */}
             <div className="mb-6">
               <div className="flex items-center justify-between mb-3">
@@ -181,6 +136,8 @@ export const Login: React.FC = () => {
                     ? 'border-red-300 text-red-900 focus:border-red-500 bg-red-50' 
                     : 'border-gray-200 focus:border-blue-500 bg-white hover:border-gray-300'
                 }`}
+                aria-invalid={errors.selectedTenant ? 'true' : 'false'}
+                aria-describedby={errors.selectedTenant ? 'tenant-error' : undefined}
               >
                 <option value="">Choose your tenant...</option>
                 {availableTenants.map((tenant) => (
@@ -190,7 +147,7 @@ export const Login: React.FC = () => {
                 ))}
               </select>
               {errors.selectedTenant && (
-                <p className="mt-2 text-sm text-red-600 flex items-center" role="alert">
+                <p id="tenant-error" className="mt-2 text-sm text-red-600 flex items-center">
                   <svg className="w-4 h-4 mr-1 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                   </svg>
@@ -199,135 +156,82 @@ export const Login: React.FC = () => {
               )}
             </div>
 
-            {/* Registration Success Message */}
-            {registrationMessage && (
-              <div className="mb-6 rounded-xl bg-green-50 border border-green-200 p-4">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-green-800">
-                      Registration Successful!
-                    </h3>
-                    <div className="mt-1 text-sm text-green-700">
-                      {registrationMessage}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {/* Login Success Message */}
-            {loginSuccess && (
-              <div className="mb-6 rounded-xl bg-green-50 border border-green-200 p-4">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-green-800">
-                      Login Successful!
-                    </h3>
-                    <div className="mt-1 text-sm text-green-700">
-                      Welcome back! Redirecting to dashboard...
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            <form className="space-y-6" onSubmit={handleSubmit}>
+            <form className="space-y-6" onSubmit={handleSubmit} noValidate>
               <div className="space-y-5">
                 <Input
                   label="Email address"
-                  name="email"
                   type="email"
-                  autoComplete="email"
-                  required
+                  name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  error={errors.email}
                   placeholder="Enter your email"
-                  className="transition-all duration-200 focus:scale-[1.02]"
+                  error={errors.email}
+                  required
+                  autoComplete="email"
                 />
-                
+
                 <Input
                   label="Password"
-                  name="password"
                   type="password"
-                  autoComplete="current-password"
-                  required
+                  name="password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  error={errors.password}
                   placeholder="Enter your password"
-                  className="transition-all duration-200 focus:scale-[1.02]"
+                  error={errors.password}
+                  required
+                  autoComplete="current-password"
                 />
               </div>
 
-              {authError && (
+              {loginError && (
                 <div className="rounded-xl bg-red-50 border border-red-200 p-4">
                   <div className="flex">
                     <div className="flex-shrink-0">
                       <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 0116 0zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 00-1.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                       </svg>
                     </div>
                     <div className="ml-3">
-                      <h3 className="text-sm font-medium text-red-800">
-                        Authentication Error
-                      </h3>
-                      <div className="mt-1 text-sm text-red-700">
-                        {authError}
-                      </div>
+                      <p className="text-sm text-red-700">
+                        {loginError}
+                      </p>
                     </div>
                   </div>
                 </div>
               )}
 
               <div className="pt-2 space-y-3">
-                <Button
+                <button
                   type="submit"
-                  className="w-full h-12 text-base font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transform transition-all duration-200 hover:scale-[1.02] shadow-lg hover:shadow-xl"
-                  isLoading={isSubmitting}
-                  disabled={isSubmitting}
+                  disabled={isLoading}
+                  className="inline-flex items-center justify-center font-semibold rounded-xl focus:outline-none focus:ring-4 focus:ring-offset-2 transition-all duration-200 ease-in-out transform hover:scale-[1.02] active:scale-[0.98] disabled:transform-none disabled:cursor-not-allowed bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white focus:ring-blue-500/50 shadow-lg hover:shadow-xl disabled:from-gray-400 disabled:to-gray-400 disabled:shadow-none px-6 py-3 text-sm h-11 w-full h-12 text-base font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transform transition-all duration-200 hover:scale-[1.02] shadow-lg hover:shadow-xl"
                 >
-                  {isSubmitting ? 'Signing in...' : 'Sign in'}
-                </Button>
+                  {isLoading ? 'Signing in...' : 'Sign in'}
+                </button>
 
                 <div className="text-center">
                   <span className="text-sm text-gray-500">or</span>
                 </div>
 
-                <Link to="/register">
-                  <Button
+                <a href="/register" data-discover>
+                  <button
                     type="button"
-                    variant="secondary"
-                    className="w-full h-12 text-base font-semibold transform transition-all duration-200 hover:scale-[1.02]"
+                    className="inline-flex items-center justify-center font-semibold rounded-xl focus:outline-none focus:ring-4 focus:ring-offset-2 transition-all duration-200 ease-in-out transform hover:scale-[1.02] active:scale-[0.98] disabled:transform-none disabled:cursor-not-allowed bg-white hover:bg-gray-50 text-gray-700 border-2 border-gray-200 hover:border-gray-300 focus:ring-gray-500/50 shadow-sm hover:shadow-md disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 disabled:shadow-none px-6 py-3 text-sm h-11 w-full h-12 text-base font-semibold transform transition-all duration-200 hover:scale-[1.02]"
                   >
                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                     </svg>
                     Create New Account
-                  </Button>
-                </Link>
+                  </button>
+                </a>
               </div>
             </form>
           </div>
         </div>
-
-        {/* Additional Info */}
         <div className="mt-6 text-center">
-          <p className="text-sm text-gray-500">
-            Secure multi-tenant authentication
-          </p>
+          <p className="text-sm text-gray-500">Secure multi-tenant authentication</p>
         </div>
       </div>
     </div>
   );
-}; 
+};
