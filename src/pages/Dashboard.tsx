@@ -1,11 +1,41 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../features/auth/AuthContext';
 import { useTenant } from '../features/tenant/TenantContext';
 import { Button } from '../components/ui/Button';
+import { leadService } from '../services/leadService';
+import type { Lead } from '../types/Lead';
 
 export const Dashboard: React.FC = () => {
   const { user, logout } = useAuth();
   const { currentTenant, switchTenant, availableTenants } = useTenant();
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [leadCounts, setLeadCounts] = useState({
+    total: 0,
+    inProgress: 0,
+    rejected: 0,
+    archived: 0
+  });
+
+  useEffect(() => {
+    const fetchLeads = async () => {
+      try {
+        const data = await leadService.getLeads(currentTenant);
+        setLeads(data);
+        
+        // Calculate counts
+        setLeadCounts({
+          total: data.length,
+          inProgress: data.filter(lead => lead.leadStatus === 'In Progress').length,
+          rejected: data.filter(lead => lead.leadStatus === 'Rejected').length,
+          archived: data.filter(lead => lead.leadStatus === 'Archived').length
+        });
+      } catch (error) {
+        console.error('Error fetching leads:', error);
+      }
+    };
+
+    fetchLeads();
+  }, [currentTenant]);
 
   const handleLogout = () => {
     logout();
@@ -174,6 +204,52 @@ export const Dashboard: React.FC = () => {
                       )}
                     </Button>
                   ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Leads Section */}
+          <div className="mt-8">
+            <div className="bg-white/80 backdrop-blur-sm shadow-xl rounded-2xl border border-gray-100">
+              <div className="px-6 py-6">
+                <div className="flex items-center mb-6">
+                  <div className="w-10 h-10 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-xl flex items-center justify-center">
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                  </div>
+                  <h3 className="ml-3 text-lg font-semibold text-gray-900">
+                    Lead Management
+                  </h3>
+                  <Button 
+                    variant="secondary"
+                    className="ml-auto text-sm"
+                    onClick={() => window.location.href = '/leads'}
+                  >
+                    View All Leads
+                    <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl">
+                    <div className="text-3xl font-bold text-blue-600 mb-1">{leadCounts.total}</div>
+                    <div className="text-sm text-blue-700 font-medium">Total Leads</div>
+                  </div>
+                  <div className="text-center p-4 bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl">
+                    <div className="text-3xl font-bold text-indigo-600 mb-1">{leadCounts.inProgress}</div>
+                    <div className="text-sm text-indigo-700 font-medium">In Progress</div>
+                  </div>
+                  <div className="text-center p-4 bg-gradient-to-br from-red-50 to-red-100 rounded-xl">
+                    <div className="text-3xl font-bold text-red-600 mb-1">{leadCounts.rejected}</div>
+                    <div className="text-sm text-red-700 font-medium">Rejected</div>
+                  </div>
+                  <div className="text-center p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl">
+                    <div className="text-3xl font-bold text-gray-600 mb-1">{leadCounts.archived}</div>
+                    <div className="text-sm text-gray-700 font-medium">Archived</div>
+                  </div>
                 </div>
               </div>
             </div>

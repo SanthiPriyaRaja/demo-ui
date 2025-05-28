@@ -5,6 +5,7 @@ import { TenantProvider } from '../features/tenant/TenantContext';
 import { ProtectedRoute } from './ProtectedRoute';
 import { Login } from '../pages/Login';
 import { Dashboard } from '../pages/Dashboard';
+import { Leads } from '../pages/Leads';
 
 export const AppRouter: React.FC = () => {
   return (
@@ -21,6 +22,15 @@ export const AppRouter: React.FC = () => {
               element={
                 <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/leads" 
+              element={
+                <ProtectedRoute>
+                  <Leads />
                 </ProtectedRoute>
               } 
             />
