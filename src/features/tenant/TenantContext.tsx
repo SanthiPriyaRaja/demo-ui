@@ -52,9 +52,9 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return parts[0];
     }
     
-    // Return empty string instead of defaulting to 'tenant1'
-    console.log('  - Returning empty string (no tenant found)');
-    return '';
+    // Default to tenant1 instead of empty string
+    console.log('  - Returning default tenant: tenant1');
+    return 'tenant1';
   };
   
   const [currentTenant, setCurrentTenant] = useState<string>(getInitialTenant());
