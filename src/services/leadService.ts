@@ -115,5 +115,36 @@ export const leadService = {
             // Rethrow error for create operations
             throw error;
         }
+    },
+
+    /**
+     * Update an existing lead
+     * @param tenantId - The tenant identifier
+     * @param leadId - The ID of the lead to update
+     * @param leadData - The updated lead data
+     * @returns Promise<Lead> - The updated lead
+     * @throws {AxiosError} When the API request fails
+     */
+    updateLead: async (tenantId: string, leadId: string, leadData: Partial<Lead>): Promise<Lead> => {
+        try {
+            const axiosInstance = createAxiosInstance();
+            const response = await axiosInstance.put<Lead>(`/lead/${leadId}`, leadData);
+            return response.data;
+        } catch (error) {
+            const apiError: LeadServiceError = {
+                message: 'Failed to update lead'
+            };
+
+            if (error && typeof error === 'object' && 'response' in error) {
+                apiError.status = (error as AxiosError).response?.status;
+                apiError.data = (error as AxiosError).response?.data;
+                console.error('API Error:', apiError);
+            } else {
+                console.error('Error updating lead:', error);
+            }
+            
+            // Rethrow error for update operations
+            throw error;
+        }
     }
 };

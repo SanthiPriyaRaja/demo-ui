@@ -3,9 +3,10 @@ import type { Lead } from '../types/Lead';
 
 interface LeadCardProps {
     lead: Lead;
+    onEdit?: () => void;
 }
 
-export const LeadCard: React.FC<LeadCardProps> = ({ lead }) => {
+export const LeadCard: React.FC<LeadCardProps> = ({ lead, onEdit }) => {
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'Open':
@@ -37,9 +38,22 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead }) => {
             <div className="px-6 py-4">
                 <div className="flex justify-between items-start gap-4">
                     <div>
-                        <h3 className="text-lg font-semibold text-gray-900">
-                            {lead.firstName} {lead.lastName}
-                        </h3>
+                        <div className="flex items-center gap-2 group">
+                            <h3 className="text-lg font-semibold text-gray-900">
+                                {lead.firstName} {lead.lastName}
+                            </h3>
+                            {onEdit && (
+                                <button
+                                    onClick={onEdit}
+                                    className="p-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                                    title="Edit Lead"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                    </svg>
+                                </button>
+                            )}
+                        </div>
                         <div className="mt-0.5 space-y-0.5">
                             <p className="text-sm text-gray-600">{lead.email}</p>
                             <p className="text-sm text-gray-600">
@@ -52,7 +66,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead }) => {
                     </span>
                 </div>
 
-                <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2">
+                <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
                     <div>
                         <p className="text-xs font-medium text-gray-500">Lead Type</p>
                         <p className="text-sm text-gray-900">{lead.leadType}</p>
@@ -73,7 +87,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead }) => {
 
                 <div className="mt-4 pt-4 border-t border-gray-100">
                     <p className="text-xs font-medium text-gray-500">Created</p>
-                    <p className="text-sm text-gray-900">{formatDate(lead.createdAt)}</p>
+                    <p className="text-sm text-gray-900">{lead.createdAt ? formatDate(lead.createdAt) : 'N/A'}</p>
                     <p className="text-xs font-medium text-gray-500 mt-2">Remarks</p>
                     <p className="text-sm text-gray-900 mt-1 line-clamp-2">{lead.userRemarks}</p>
                 </div>

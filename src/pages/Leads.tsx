@@ -7,6 +7,7 @@ import { LeadCard } from '../components/LeadCard';
 import { Button } from '../components/ui/Button';
 import { AddLeadModal } from '../components/AddLeadModal';
 import { FilterLeadsModal, type LeadFilters } from '../components/FilterLeadsModal';
+import { EditLeadModal } from '../components/EditLeadModal';
 
 const getTenantColors = (tenant: string) => {
     switch (tenant) {
@@ -64,6 +65,8 @@ export const Leads: React.FC = () => {
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
     const [filters, setFilters] = useState<LeadFilters>({});
     const itemsPerPage = 10;
+    const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
     const tenantColors = getTenantColors(currentTenant);
     const tabs: LeadTab[] = ['All', 'Open', 'Converted', 'Rejected', 'Discarded'];
@@ -101,7 +104,29 @@ export const Leads: React.FC = () => {
 
     const handleApplyFilters = (newFilters: LeadFilters) => {
         setFilters(newFilters);
-        setCurrentPage(1); // Reset to first page when filters change
+        setCurrentPage(1);
+    };
+
+    const handleEditClick = (lead: Lead) => {
+        setSelectedLead(lead);
+        setIsEditModalOpen(true);
+    };
+
+    const handleUpdateLead = async (updatedLead: Lead) => {
+        try {
+            if (!updatedLead._id) {
+                throw new Error('Lead ID is required for update');
+            }
+            const updated = await leadService.updateLead(currentTenant, updatedLead._id, updatedLead);
+            setLeads(prevLeads =>
+                prevLeads.map(lead =>
+                    lead._id === updated._id ? updated : lead
+                )
+            );
+        } catch (error) {
+            console.error('Error updating lead:', error);
+            setError('Failed to update lead. Please try again.');
+        }
     };
 
     const filteredLeads = leads;
@@ -243,11 +268,15 @@ export const Leads: React.FC = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {currentLeads.length > 0 ? (
                                         currentLeads.map((lead) => (
-                                            <LeadCard key={lead._id} lead={lead} />
+                                            <div key={lead._id} className="relative">
+                                                <LeadCard 
+                                                    lead={lead}
+                                                    onEdit={() => handleEditClick(lead)}
+                                                />
+                                            </div>
                                         ))
                                     ) : (
-                                        <div className="col-span-2 text-center text-gray-500 py-8 bg-white/80 backdrop-blur-sm rounded-xl
-                                            shadow-[0_2px_8px_rgb(0,0,0,0.08)]">
+                                        <div className="col-span-2 text-center text-gray-500 py-8">
                                             No leads found matching your criteria.
                                         </div>
                                     )}
@@ -297,6 +326,17 @@ export const Leads: React.FC = () => {
                 onApplyFilters={handleApplyFilters}
                 initialFilters={filters}
             />
+            {selectedLead && (
+                <EditLeadModal
+                    isOpen={isEditModalOpen}
+                    onClose={() => {
+                        setIsEditModalOpen(false);
+                        setSelectedLead(null);
+                    }}
+                    onUpdate={handleUpdateLead}
+                    lead={selectedLead}
+                />
+            )}
         </div>
     );
 };
