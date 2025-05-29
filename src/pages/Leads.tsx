@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTenant } from '../features/tenant/TenantContext';
 import { useTenantTheme } from '../features/theme/TenantThemeContext';
+import { useToast } from '../features/toast/ToastContext';
 import type { Lead, LeadTab } from '../types/Lead';
 import { leadService } from '../services/leadService';
 import { LeadCard } from '../components/LeadCard';
@@ -13,9 +14,9 @@ export const Leads: React.FC = () => {
     const [leads, setLeads] = useState<Lead[]>([]);
     const [activeTab, setActiveTab] = useState<LeadTab>('All');
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const { currentTenant } = useTenant();
     const { colors } = useTenantTheme();
+    const { showSuccess, showError } = useToast();
     const [currentPage, setCurrentPage] = useState(1);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
@@ -28,14 +29,13 @@ export const Leads: React.FC = () => {
         const fetchLeads = async () => {
             try {
                 setLoading(true);
-                setError(null);
                 const data = await leadService.getLeads(currentTenant, {
                     ...filters,
                     leadStatus: activeTab !== 'All' ? activeTab : filters.leadStatus
                 });
                 setLeads(data);
             } catch (err) {
-                setError('Failed to fetch leads. Please try again later.');
+                showError('Failed to fetch leads. Please try again later.');
                 console.error('Error:', err);
             } finally {
                 setLoading(false);
@@ -49,9 +49,11 @@ export const Leads: React.FC = () => {
         try {
             const createdLead = await leadService.createLead(currentTenant, newLead);
             setLeads(prev => [createdLead, ...prev]);
+            showSuccess('Lead created successfully!');
+            setIsAddModalOpen(false);
         } catch (error) {
             console.error('Error adding lead:', error);
-            setError('Failed to add lead. Please try again.');
+            showError('Failed to add lead. Please try again.');
         }
     };
 
@@ -133,14 +135,6 @@ export const Leads: React.FC = () => {
 
             {/* Main Content */}
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {/* Error Message */}
-                {error && (
-                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl mb-4
-                        shadow-[0_2px_8px_rgb(0,0,0,0.08)]">
-                        {error}
-                    </div>
-                )}
-
                 {/* Loading State */}
                 {loading ? (
                     <div className="flex justify-center items-center h-64">
