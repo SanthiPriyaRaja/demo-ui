@@ -8,6 +8,7 @@ import { leadService } from '../services/leadService';
 import { LeadCard } from '../components/LeadCard';
 import { Button } from '../components/ui/Button';
 import { AddLeadModal } from '../components/AddLeadModal';
+import { UpdateLeadModal } from '../components/UpdateLeadModal';
 import { FilterLeadsModal, type LeadFilters } from '../components/FilterLeadsModal';
 
 export const Leads: React.FC = () => {
@@ -19,8 +20,10 @@ export const Leads: React.FC = () => {
     const { showSuccess, showError } = useToast();
     const [currentPage, setCurrentPage] = useState(1);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
     const [filters, setFilters] = useState<LeadFilters>({});
+    const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
     const itemsPerPage = 10;
 
     const tabs: LeadTab[] = ['All', 'Open', 'Converted', 'Rejected', 'Discarded'];
@@ -59,6 +62,29 @@ export const Leads: React.FC = () => {
                 showError('Failed to add lead. Please try again.');
             }
         }
+    };
+
+    const handleUpdateLead = async (leadId: string, updatedData: Partial<Lead>) => {
+        try {
+            const updatedLead = await leadService.updateLead(currentTenant, leadId, updatedData);
+            setLeads(prev => prev.map(lead => 
+                lead._id === leadId ? updatedLead : lead
+            ));
+            showSuccess('Lead updated successfully!');
+            setIsUpdateModalOpen(false);
+            setSelectedLead(null);
+        } catch (error) {
+            if (error instanceof Error) {
+                showError(error.message);
+            } else {
+                showError('Failed to update lead');
+            }
+        }
+    };
+
+    const handleEditClick = (lead: Lead) => {
+        setSelectedLead(lead);
+        setIsUpdateModalOpen(true);
     };
 
     const handleApplyFilters = (newFilters: LeadFilters) => {
@@ -199,7 +225,7 @@ export const Leads: React.FC = () => {
                                 {/* Leads Grid */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                                     {currentLeads.map((lead) => (
-                                        <LeadCard key={lead._id} lead={lead} />
+                                        <LeadCard key={lead._id} lead={lead} onEditClick={() => handleEditClick(lead)} />
                                     ))}
                                 </div>
 
@@ -242,6 +268,19 @@ export const Leads: React.FC = () => {
                     onClose={() => setIsAddModalOpen(false)}
                     onSubmit={handleAddLead}
                 />
+
+                {selectedLead && (
+                    <UpdateLeadModal
+                        isOpen={isUpdateModalOpen}
+                        onClose={() => {
+                            setIsUpdateModalOpen(false);
+                            setSelectedLead(null);
+                        }}
+                        onSubmit={handleUpdateLead}
+                        lead={selectedLead}
+                    />
+                )}
+
                 <FilterLeadsModal
                     isOpen={isFilterModalOpen}
                     onClose={() => setIsFilterModalOpen(false)}

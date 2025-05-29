@@ -1,55 +1,49 @@
 import React from 'react';
 import type { Lead } from '../types/Lead';
 import { useTenantTheme } from '../features/theme/TenantThemeContext';
+import { formatDate } from '../utils/dateUtils';
 
 interface LeadCardProps {
     lead: Lead;
+    onEditClick: () => void;
 }
 
-export const LeadCard: React.FC<LeadCardProps> = ({ lead }) => {
+export const LeadCard: React.FC<LeadCardProps> = ({ lead, onEditClick }) => {
     const { colors } = useTenantTheme();
 
     const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'Open':
-                return 'bg-blue-100 text-blue-800 ring-blue-600/20';
-            case 'Converted':
-                return 'bg-emerald-100 text-emerald-800 ring-emerald-600/20';
-            case 'Rejected':
-                return 'bg-red-100 text-red-800 ring-red-600/20';
-            case 'Discarded':
-                return 'bg-gray-100 text-gray-800 ring-gray-600/20';
+        switch (status.toLowerCase()) {
+            case 'open':
+                return 'bg-blue-100 text-blue-800';
+            case 'converted':
+                return 'bg-green-100 text-green-800';
+            case 'rejected':
+                return 'bg-red-100 text-red-800';
+            case 'discarded':
+                return 'bg-gray-100 text-gray-800';
             default:
-                return 'bg-gray-100 text-gray-800 ring-gray-600/20';
+                return 'bg-gray-100 text-gray-800';
         }
     };
 
-    const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        });
-    };
-
     const getProgressColor = (progress: string) => {
-        switch (progress) {
-            case 'New Lead Entry':
-                return colors.text.primary;
-            case 'Contacted':
-                return colors.text.primary;
-            case 'Qualified':
-                return colors.text.primary;
-            case 'Proposal Sent':
-                return colors.text.secondary;
-            case 'Negotiation':
-                return colors.text.secondary;
-            case 'Closed Won':
-                return colors.text.primary;
-            case 'Closed Lost':
-                return colors.text.secondary;
+        switch (progress.toLowerCase()) {
+            case 'new lead entry':
+                return 'bg-purple-100 text-purple-800';
+            case 'contacted':
+                return 'bg-blue-100 text-blue-800';
+            case 'qualified':
+                return 'bg-indigo-100 text-indigo-800';
+            case 'proposal sent':
+                return 'bg-yellow-100 text-yellow-800';
+            case 'negotiation':
+                return 'bg-orange-100 text-orange-800';
+            case 'closed won':
+                return 'bg-green-100 text-green-800';
+            case 'closed lost':
+                return 'bg-red-100 text-red-800';
             default:
-                return colors.text.muted;
+                return 'bg-gray-100 text-gray-800';
         }
     };
 
@@ -80,9 +74,19 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead }) => {
                             </div>
                         </div>
                     </div>
-                    <span className={`px-3 py-1.5 rounded-full text-xs font-medium ring-1 ring-inset ${getStatusColor(lead.leadStatus)}`}>
-                        {lead.leadStatus}
-                    </span>
+                    <div className="flex items-center gap-3">
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(lead.leadStatus)}`}>
+                            {lead.leadStatus}
+                        </span>
+                        <button
+                            onClick={onEditClick}
+                            className="text-gray-400 hover:text-gray-500"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             </div>
 

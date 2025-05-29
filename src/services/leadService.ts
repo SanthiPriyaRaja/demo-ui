@@ -105,5 +105,54 @@ export const leadService = {
             // Throw a custom error with all the details
             throw new LeadError(errorMessage, statusCode, errorData);
         }
+    },
+
+    /**
+     * Update an existing lead
+     * @param tenantId - The tenant identifier
+     * @param leadId - The ID of the lead to update
+     * @param leadData - The updated lead data
+     * @returns Promise<Lead> - The updated lead
+     * @throws {LeadError} When the API request fails with specific error details
+     */
+    updateLead: async (tenantId: string, leadId: string, leadData: Partial<Lead>): Promise<Lead> => {
+        try {
+            const response = await apiService.put<Lead>(`/lead/${leadId}`, leadData);
+            return response;
+        } catch (error) {
+            // Extract error details
+            let errorMessage = 'Failed to update lead';
+            let statusCode: number | undefined;
+            let errorData: unknown;
+
+            if (error && typeof error === 'object' && 'response' in error) {
+                const response = (error as any).response;
+                statusCode = response?.status;
+                errorData = response?.data;
+                
+                // Use the specific error message from the API if available
+                if (response?.data?.message) {
+                    errorMessage = response.data.message;
+                }
+
+                // Handle specific error cases
+                if (statusCode === 404) {
+                    errorMessage = 'Lead not found';
+                } else if (statusCode === 400) {
+                    errorMessage = response?.data?.message || 'Invalid lead data';
+                } else if (statusCode === 409) {
+                    errorMessage = 'A lead with this email already exists';
+                }
+            }
+
+            console.error('Lead Update Error:', {
+                message: errorMessage,
+                status: statusCode,
+                data: errorData
+            });
+
+            // Throw a custom error with all the details
+            throw new LeadError(errorMessage, statusCode, errorData);
+        }
     }
 };
