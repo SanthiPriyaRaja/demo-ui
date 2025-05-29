@@ -23,9 +23,21 @@ export const Dashboard: React.FC = () => {
 
   // Ensure tenant consistency
   useEffect(() => {
-    if (user?.tenant && user.tenant !== currentTenant) {
-      // If user's tenant doesn't match current tenant, switch to user's tenant
-      switchTenant(user.tenant);
+    // Only switch tenant if:
+    // 1. We have a user
+    // 2. User has a tenant
+    // 3. Current tenant doesn't match user's tenant
+    // 4. Current tenant is actually set (not empty)
+    if (user?.tenant && 
+        currentTenant && 
+        user.tenant !== currentTenant) {
+      console.log('Dashboard - Tenant mismatch detected:', {
+        userTenant: user.tenant,
+        currentTenant,
+        action: 'Switching tenant with preserved auth'
+      });
+      // Switch tenant but preserve auth state since this is an initial sync
+      switchTenant(user.tenant, true);
     }
   }, [user?.tenant, currentTenant, switchTenant]);
 

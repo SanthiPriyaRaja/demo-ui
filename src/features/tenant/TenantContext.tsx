@@ -5,7 +5,7 @@ import { apiService } from '../../services/api';
 
 interface TenantContextType {
   currentTenant: string;
-  switchTenant: (tenant: string) => void;
+  switchTenant: (tenant: string, preserveAuth?: boolean) => void;
   availableTenants: Tenant[];
   resetTenant: () => void;
 }
@@ -105,22 +105,41 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, [currentTenant]);
 
-  const switchTenant = (tenant: string) => {
+  const switchTenant = (tenant: string, preserveAuth = false) => {
+    console.log('🔄 TenantContext - switchTenant:', { tenant, preserveAuth });
+    
+    // Check if we need to clear auth
+    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+    const shouldClearAuth = !preserveAuth && currentUser.tenant && currentUser.tenant !== tenant;
+    
+    console.log('TenantContext - switchTenant analysis:', {
+      currentUser: currentUser.tenant,
+      newTenant: tenant,
+      shouldClearAuth
+    });
+
+    // Update tenant state
     setCurrentTenant(tenant);
     apiService.updateTenant(tenant);
-    
-    // Clear auth state when switching tenants for security
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('user');
-    localStorage.removeItem('tenantId');
-    // Keep the selected tenant in localStorage
     localStorage.setItem('selectedTenant', tenant);
-    
-    // Update URL
     setTenantInUrl(tenant);
-    
-    // Reload to ensure clean state
-    window.location.reload();
+
+    if (shouldClearAuth) {
+      console.log('TenantContext - Clearing auth during tenant switch');
+      // Clear auth only if switching to a different tenant
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
+      localStorage.removeItem('tenantId');
+      window.location.reload();
+    } else {
+      console.log('TenantContext - Preserving auth during tenant switch');
+      // Just update the API service with current auth
+      const savedToken = localStorage.getItem('authToken');
+      const savedTenantId = localStorage.getItem('tenantId');
+      if (savedToken && savedTenantId) {
+        apiService.setAuthData(savedToken, savedTenantId);
+      }
+    }
   };
 
   const resetTenant = () => {

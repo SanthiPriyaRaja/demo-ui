@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { getCurrentTenant, getTenantApiId } from '../../utils/tenant';
 import { apiService } from '../../services/api';
+import { useTenant } from '../tenant/TenantContext';
 
 export interface User {
   id: string;
@@ -66,6 +67,7 @@ export const useAuth = () => {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { switchTenant } = useTenant();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -89,19 +91,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Update API service with stored values
         apiService.setAuthData(savedToken, savedTenantId);
         
-        // If we have a saved selected tenant, update the URL to match
-        if (savedSelectedTenant && savedSelectedTenant !== getCurrentTenant()) {
-          const url = new URL(window.location.href);
-          url.searchParams.set('tenant', savedSelectedTenant);
-          window.history.replaceState({}, '', url.toString());
+        // If we have a saved selected tenant, update tenant context
+        if (savedSelectedTenant) {
+          console.log('Auth - Restoring saved tenant:', savedSelectedTenant);
+          switchTenant(savedSelectedTenant, true);
         }
         
-        console.log('Restored auth data from localStorage:');
-        console.log('Token:', savedToken);
-        console.log('Selected Tenant:', savedSelectedTenant);
-        console.log('Tenant ID:', savedTenantId);
-        console.log('User:', parsedUser);
+        console.log('Restored auth data from localStorage:', {
+          token: savedToken,
+          selectedTenant: savedSelectedTenant,
+          tenantId: savedTenantId,
+          user: parsedUser
+        });
       } catch (err) {
+        console.error('Error restoring auth data:', err);
         // Invalid saved user data, clear it
         localStorage.removeItem('authToken');
         localStorage.removeItem('tenantId');
@@ -111,7 +114,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     
     setIsLoading(false);
-  }, []);
+  }, [switchTenant]);
 
   const login = async (email: string, password: string, tenant?: string): Promise<void> => {
     setIsLoading(true);
@@ -122,6 +125,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const selectedTenant = tenant || getCurrentTenant();
       const selectedTenantId = getTenantApiId(selectedTenant);
       
+      console.log('Auth - Login attempt:', {
+        email,
+        selectedTenant,
+        selectedTenantId
+      });
+      
       // Try real API first
       try {
         const response = await apiService.loginWithTenant(email, password, selectedTenant);
@@ -131,7 +140,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (authToken && response.user) {
           // Use the selected tenant from login form, not from API response
-          // This ensures the user's choice is respected
           const apiUser: User = {
             id: response.user.id || response.user._id || '1',
             email: response.user.email,
@@ -144,7 +152,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             tenantId: selectedTenantId,
           };
           
-          // Save to localStorage
+          // First update tenant context (before setting auth data)
+          console.log('Auth - Switching to selected tenant:', selectedTenant);
+          switchTenant(selectedTenant, true);
+          
+          // Then save auth data
           localStorage.setItem('authToken', authToken);
           localStorage.setItem('tenantId', selectedTenantId);
           localStorage.setItem('selectedTenant', selectedTenant);
@@ -158,11 +170,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Update API service with auth data
           apiService.setAuthData(authToken, selectedTenantId);
           
-          console.log('Login successful - Stored data:');
-          console.log('Token:', authToken);
-          console.log('Selected Tenant:', selectedTenant);
-          console.log('Tenant ID:', selectedTenantId);
-          console.log('User:', apiUser);
+          console.log('Login successful:', {
+            token: authToken,
+            selectedTenant,
+            tenantId: selectedTenantId,
+            user: apiUser
+          });
           
           return;
         } else {
