@@ -1,6 +1,5 @@
-import axios, { type InternalAxiosRequestConfig, AxiosHeaders, AxiosError } from 'axios';
 import type { Lead } from '../types/Lead';
-import { getApiUrl } from '../config';
+import { apiService } from './api';
 
 // Types for request/response
 interface LeadFilters {
@@ -18,31 +17,16 @@ interface LeadServiceError {
     data?: unknown;
 }
 
-// Create axios instance with default config
-const createAxiosInstance = () => {
-    const instance = axios.create({
-        baseURL: getApiUrl(),
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    });
-
-    // Add request interceptor to set auth and tenant headers
-    instance.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-        const token = localStorage.getItem('authToken');
-        const tenantId = localStorage.getItem('tenantId');
-        
-        if (token) {
-            (config.headers as AxiosHeaders).set('Authorization', `Bearer ${token}`);
-        }
-        if (tenantId) {
-            (config.headers as AxiosHeaders).set('X-Tenant-ID', tenantId);
-        }
-        return config;
-    });
-
-    return instance;
-};
+export class LeadError extends Error {
+    constructor(
+        message: string,
+        public status?: number,
+        public data?: unknown
+    ) {
+        super(message);
+        this.name = 'LeadError';
+    }
+}
 
 export const leadService = {
     /**
@@ -66,17 +50,15 @@ export const leadService = {
                 }
             }
 
-            const axiosInstance = createAxiosInstance();
-            const response = await axiosInstance.get<Lead[]>(url);
-            return response.data;
+            return await apiService.get<Lead[]>(url);
         } catch (error) {
             const apiError: LeadServiceError = {
                 message: 'Failed to fetch leads'
             };
 
             if (error && typeof error === 'object' && 'response' in error) {
-                apiError.status = (error as AxiosError).response?.status;
-                apiError.data = (error as AxiosError).response?.data;
+                apiError.status = (error as any).response?.status;
+                apiError.data = (error as any).response?.data;
                 console.error('API Error:', apiError);
             } else {
                 console.error('Error fetching leads:', error);
@@ -92,28 +74,36 @@ export const leadService = {
      * @param tenantId - The tenant identifier
      * @param leadData - The lead data to create
      * @returns Promise<Lead> - The created lead
-     * @throws {AxiosError} When the API request fails
+     * @throws {LeadError} When the API request fails with specific error details
      */
     createLead: async (tenantId: string, leadData: Partial<Lead>): Promise<Lead> => {
         try {
-            const axiosInstance = createAxiosInstance();
-            const response = await axiosInstance.post<Lead>('/lead', leadData);
-            return response.data;
+            return await apiService.post<Lead>('/lead', leadData);
         } catch (error) {
-            const apiError: LeadServiceError = {
-                message: 'Failed to create lead'
-            };
+            // Extract error details
+            let errorMessage = 'Failed to create lead';
+            let statusCode: number | undefined;
+            let errorData: unknown;
 
             if (error && typeof error === 'object' && 'response' in error) {
-                apiError.status = (error as AxiosError).response?.status;
-                apiError.data = (error as AxiosError).response?.data;
-                console.error('API Error:', apiError);
-            } else {
-                console.error('Error creating lead:', error);
+                const response = (error as any).response;
+                statusCode = response?.status;
+                errorData = response?.data;
+                
+                // Use the specific error message from the API if available
+                if (response?.data?.message) {
+                    errorMessage = response.data.message;
+                }
             }
-            
-            // Rethrow error for create operations
-            throw error;
+
+            console.error('Lead Creation Error:', {
+                message: errorMessage,
+                status: statusCode,
+                data: errorData
+            });
+
+            // Throw a custom error with all the details
+            throw new LeadError(errorMessage, statusCode, errorData);
         }
     }
 };

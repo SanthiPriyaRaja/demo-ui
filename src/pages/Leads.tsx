@@ -52,8 +52,12 @@ export const Leads: React.FC = () => {
             showSuccess('Lead created successfully!');
             setIsAddModalOpen(false);
         } catch (error) {
-            console.error('Error adding lead:', error);
-            showError('Failed to add lead. Please try again.');
+            // Check if it's our custom LeadError
+            if (error instanceof Error) {
+                showError(error.message);
+            } else {
+                showError('Failed to add lead. Please try again.');
+            }
         }
     };
 

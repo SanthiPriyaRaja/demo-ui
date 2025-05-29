@@ -66,16 +66,45 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onS
     };
 
     const [formData, setFormData] = useState<Partial<Lead>>(initialFormState);
+    const [errors, setErrors] = useState<Record<string, string>>({});
+
+    const validateMobileNumber = (number: string) => {
+        const mobileRegex = /^\d{10}$/;
+        return mobileRegex.test(number);
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        
+        // Clear error when user starts typing
+        setErrors(prev => ({ ...prev, [name]: '' }));
+
+        if (name === 'mobileNo') {
+            // Only allow digits
+            const numbersOnly = value.replace(/\D/g, '');
+            // Limit to 10 digits
+            const truncated = numbersOnly.slice(0, 10);
+            setFormData(prev => ({ ...prev, [name]: truncated }));
+        } else {
+            setFormData(prev => ({ ...prev, [name]: value }));
+        }
     };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        
+        // Validate mobile number
+        if (!validateMobileNumber(formData.mobileNo || '')) {
+            setErrors(prev => ({ 
+                ...prev, 
+                mobileNo: 'Mobile number must be exactly 10 digits' 
+            }));
+            return;
+        }
+
         onSubmit(formData);
         setFormData(initialFormState);
+        setErrors({});
         onClose();
     };
 
@@ -253,7 +282,7 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onS
                                         />
                                         <label className={labelClasses}>Email</label>
                                     </div>
-                                    <div className={inputGroupClasses}>
+                                    <div className={`${inputGroupClasses} ${errors.mobileNo ? 'border-red-500 ring-4 ring-red-500/10' : ''}`}>
                                         <input
                                             type="tel"
                                             name="mobileNo"
@@ -261,8 +290,15 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onS
                                             onChange={handleChange}
                                             className={`${inputClasses} ${formData.mobileNo ? 'input-filled' : ''}`}
                                             required
+                                            maxLength={10}
+                                            pattern="[0-9]{10}"
                                         />
-                                        <label className={labelClasses}>Mobile Number</label>
+                                        <label className={labelClasses}>Mobile Number (10 digits)</label>
+                                        {errors.mobileNo && (
+                                            <div className="absolute -bottom-6 left-0 text-sm text-red-500">
+                                                {errors.mobileNo}
+                                            </div>
+                                        )}
                                     </div>
                                     <div className={inputGroupClasses}>
                                         <input

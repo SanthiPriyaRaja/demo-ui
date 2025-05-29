@@ -33,7 +33,7 @@ class ApiService {
       timeout: 10000,
       headers: {
         'Content-Type': 'application/json',
-        'x-tenant-id': 'technxt'
+        'X-Tenant-ID': 'technxt'
       },
     });
 
@@ -79,11 +79,11 @@ class ApiService {
         
         // Add tenant header
         if (this.tenantId) {
-          config.headers['x-tenant-id'] = this.tenantId;
+          config.headers['X-Tenant-ID'] = this.tenantId;
         } else {
           const storedTenantId = localStorage.getItem('tenantId');
           if (storedTenantId) {
-            config.headers['x-tenant-id'] = storedTenantId;
+            config.headers['X-Tenant-ID'] = storedTenantId;
           }
         }
         
@@ -126,7 +126,7 @@ class ApiService {
     
     const response = await this.axiosInstance.post<RegisterResponse>('/auth/register', data, {
       headers: {
-        'x-tenant-id': backendTenantId,
+        'X-Tenant-ID': backendTenantId,
         'Content-Type': 'application/json'
       }
     });
@@ -142,7 +142,7 @@ class ApiService {
     
     const response = await this.axiosInstance.post('/auth/login', { email, password }, {
       headers: {
-        'x-tenant-id': backendTenantId,
+        'X-Tenant-ID': backendTenantId,
         'Content-Type': 'application/json'
       }
     });
